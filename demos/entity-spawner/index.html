@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entity Spawner - Spawn & States Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --shadow: #1a1512;
+            --panel: #252019;
+            --panel-light: #302922;
+            --ink: #3d342c;
+            --ink-light: #4a3f36;
+            --ink-fade: #7a6e63;
+            --parchment: #e8e0d4;
+            --parchment-dim: #c4bab0;
+            --lavender: #a78db6;
+            --lavender-glow: #c4a8d0;
+            --lavender-dim: #8a7396;
+            --sage: #9cb68d;
+            --sage-glow: #b5cca8;
+            --warning: #c9a86c;
+            --danger: #b58a8a;
+            --node-attr: #4a7c59;
+            --node-var: #c9a86c;
+            --node-trait: #8b6bb8;
+            --node-mod: #a65d7a;
+            --node-comp: #8b3a3a;
+        }
+
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--shadow);
+            color: var(--parchment);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--shadow); }
+        ::-webkit-scrollbar-thumb { background: var(--ink-light); border-radius: 3px; }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 2rem;
+            background: var(--panel);
+            border-bottom: 1px solid var(--ink-light);
+        }
+
+        .demo-header a {
+            color: var(--parchment-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .demo-header a:hover { color: var(--lavender); }
+
+        .demo-brand {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: var(--lavender);
+            letter-spacing: 0.08em;
+        }
+
+        .demo-layout {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        .demo-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: var(--lavender);
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-subtitle {
+            color: var(--ink-fade);
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-spawn {
+            background: var(--lavender);
+            color: var(--shadow);
+            border-color: var(--lavender);
+        }
+
+        .btn-spawn:hover { background: var(--lavender-glow); }
+
+        .btn-tick {
+            background: var(--panel-light);
+            color: var(--parchment-dim);
+        }
+
+        .btn-tick:hover { border-color: var(--lavender-dim); color: var(--lavender); }
+
+        .btn-clear {
+            background: transparent;
+            color: var(--ink-fade);
+        }
+
+        .btn-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+        .auto-tick-label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: var(--parchment-dim);
+            cursor: pointer;
+        }
+
+        .auto-tick-label input { accent-color: var(--lavender); }
+
+        .tick-speed {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            color: var(--ink-fade);
+        }
+
+        .tick-speed input[type="range"] {
+            width: 80px;
+            accent-color: var(--lavender);
+        }
+
+        /* Entity grid */
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .entity-card {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1rem;
+            transition: border-color 0.3s;
+            overflow: visible;
+        }
+
+        .entity-card.has-compound {
+            border-color: var(--warning);
+        }
+
+        .entity-card.critical {
+            border-color: var(--danger);
+        }
+
+        .entity-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            color: var(--parchment);
+            margin-bottom: 0.15rem;
+        }
+
+        .entity-type {
+            font-size: 0.75rem;
+            color: var(--lavender-dim);
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.55rem;
+            color: var(--ink-fade);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+            margin-top: 0.6rem;
+        }
+
+        /* Attributes */
+        .attr-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .attr-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+
+        .attr-name {
+            color: var(--sage);
+            min-width: 28px;
+        }
+
+        .attr-val {
+            color: var(--sage-glow);
+            font-weight: 500;
+        }
+
+        /* Variables */
+        .var-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+
+        .var-name {
+            color: var(--warning);
+            min-width: 40px;
+        }
+
+        .var-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--ink);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .var-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            background: var(--sage);
+        }
+
+        .var-bar-fill.low { background: var(--danger); }
+        .var-bar-fill.mid { background: var(--warning); }
+
+        .var-val {
+            color: var(--parchment-dim);
+            min-width: 25px;
+            text-align: right;
+        }
+
+        .var-rate {
+            color: var(--ink-fade);
+            min-width: 40px;
+            text-align: right;
+            font-size: 0.65rem;
+        }
+
+        .var-rate.neg { color: var(--danger); }
+        .var-rate.pos { color: var(--sage); }
+
+        /* Tags */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-top: 0.2rem;
+            overflow: visible;
+        }
+
+        .tag {
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.04em;
+        }
+
+        .tag.trait {
+            background: rgba(139, 107, 184, 0.2);
+            color: var(--lavender-glow);
+            border: 1px solid rgba(139, 107, 184, 0.3);
+        }
+
+        .tag.mod {
+            background: rgba(166, 93, 122, 0.2);
+            color: #d4a0b8;
+            border: 1px solid rgba(166, 93, 122, 0.3);
+            animation: modPulse 0.5s ease;
+        }
+
+        .tag.comp {
+            background: rgba(201, 168, 108, 0.2);
+            color: var(--warning);
+            border: 1px solid rgba(201, 168, 108, 0.3);
+            animation: modPulse 0.5s ease;
+        }
+
+        @keyframes modPulse {
+            0% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Hover tooltips */
+        .tag {
+            position: relative;
+            cursor: default;
+        }
+
+        .tag .tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 0;
+            background: #1a1512;
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 0.5rem 0.65rem;
+            min-width: 190px;
+            max-width: 260px;
+            width: max-content;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            color: var(--parchment-dim);
+            letter-spacing: 0;
+            text-transform: none;
+            white-space: normal;
+            pointer-events: none;
+        }
+
+        .tag .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 16px;
+            border: 5px solid transparent;
+            border-top-color: var(--ink-light);
+        }
+
+        .tag:hover .tooltip {
+            display: block;
+        }
+
+        .tooltip-desc {
+            color: var(--parchment);
+            font-style: italic;
+            margin-bottom: 0.35rem;
+        }
+
+        .tooltip-effect {
+            font-size: 0.72rem;
+            color: var(--ink-fade);
+            padding-left: 0.6rem;
+            position: relative;
+        }
+
+        .tooltip-effect::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            color: var(--lavender-dim);
+            font-weight: 600;
+        }
+
+        .tooltip-effect .eff-pos { color: var(--sage); }
+        .tooltip-effect .eff-neg { color: var(--danger); }
+        .tooltip-effect .eff-target { color: var(--warning); }
+
+        /* Event log */
+        .entity-log {
+            margin-top: 0.5rem;
+            max-height: 60px;
+            overflow-y: auto;
+            font-size: 0.65rem;
+            color: var(--ink-fade);
+            font-family: 'JetBrains Mono', monospace;
+            border-top: 1px solid var(--ink);
+            padding-top: 0.3rem;
+        }
+
+        .entity-log .log-entry {
+            padding: 0.1rem 0;
+        }
+
+        .log-entry .log-mod { color: var(--node-mod); }
+        .log-entry .log-comp { color: var(--warning); }
+        .log-entry .log-trait { color: var(--lavender); }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--ink-fade);
+            font-style: italic;
+        }
+
+        /* Context panel */
+        .context-panel {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .context-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--lavender);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        .context-text {
+            font-size: 0.9rem;
+            color: var(--parchment-dim);
+            line-height: 1.7;
+        }
+
+        .context-text strong { color: var(--lavender); }
+
+        .cascade-mini {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .cascade-mini span {
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+        }
+
+        .cascade-mini .c-attr { background: rgba(74,124,89,0.25); color: var(--sage-glow); }
+        .cascade-mini .c-var { background: rgba(201,168,108,0.2); color: #e0c890; }
+        .cascade-mini .c-trait { background: rgba(139,107,184,0.25); color: var(--lavender-glow); }
+        .cascade-mini .c-mod { background: rgba(166,93,122,0.25); color: #d4a0b8; }
+        .cascade-mini .c-comp { background: rgba(139,58,58,0.25); color: #d4a0a0; }
+        .cascade-mini .c-arrow { color: var(--ink-fade); }
+
+        @media (max-width: 768px) {
+            .demo-layout { padding: 1rem; }
+            .entity-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Cyclical cascade diagram */
+        .cascade-cycle {
+            display: grid;
+            grid-template-areas:
+                "attr"
+                "a1"
+                "trait"
+                "a2"
+                "var"
+                "a3"
+                "mod"
+                "a4"
+                "comp"
+                "derived"
+                "note";
+            gap: 0;
+            align-items: center;
+            justify-items: center;
+            position: relative;
+            padding: 0.5rem 2rem 0.5rem 0;
+        }
+
+        .cycle-node {
+            padding: 0.3rem 0.9rem;
+            border-radius: 4px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-align: center;
+            border: 1px solid;
+            white-space: nowrap;
+        }
+
+        .cycle-attr { background: rgba(74,124,89,0.2); color: var(--sage-glow); border-color: rgba(74,124,89,0.4); }
+        .cycle-trait { background: rgba(139,107,184,0.2); color: var(--lavender-glow); border-color: rgba(139,107,184,0.4); }
+        .cycle-var { background: rgba(201,168,108,0.15); color: #e0c890; border-color: rgba(201,168,108,0.35); }
+        .cycle-mod { background: rgba(166,93,122,0.2); color: #d4a0b8; border-color: rgba(166,93,122,0.4); }
+        .cycle-comp { background: rgba(139,58,58,0.2); color: #d4a0a0; border-color: rgba(139,58,58,0.4); }
+        .cycle-derived { background: rgba(74,124,139,0.2); color: #90c8d4; border-color: rgba(74,124,139,0.4); margin-top: 0.75rem; }
+
+        .cycle-arrow {
+            color: var(--ink-fade);
+            font-size: 0.8rem;
+            line-height: 1;
+            padding: 0.1rem 0;
+        }
+
+        .cycle-feedback {
+            position: absolute;
+            right: -10px;
+            top: 38%;
+            bottom: 20%;
+            width: 2px;
+            background: rgba(166,93,122,0.5);
+            border-radius: 1px;
+        }
+
+        .cycle-feedback::before {
+            content: '↑';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #d4a0b8;
+            font-size: 0.8rem;
+        }
+
+        .feedback-label {
+            position: absolute;
+            top: 50%;
+            left: 8px;
+            transform: translateY(-50%);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 0.68rem;
+            color: #d4a0b8;
+            font-style: italic;
+            white-space: nowrap;
+            font-family: 'Crimson Pro', serif;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        .cycle-note {
+            font-size: 0.68rem;
+            color: var(--parchment-dim);
+            font-style: italic;
+            margin-top: 0.15rem;
+            font-family: 'Crimson Pro', serif;
+        }
+
+        /* Embed mode — stripped down for "open in new tab" */
+        body.embed-mode .demo-header,
+        body.embed-mode [data-embed-hide] { display: none !important; }
+        body.embed-mode .demo-layout { padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <script>if(location.search.includes('embed=1'))document.body.classList.add('embed-mode');</script>
+    <div class="demo-header">
+        <a href="../../projects/hierarchical-state-engine/index.html" class="demo-brand">Spawn &amp; States</a>
+        <a href="../../index.html#demos">&larr; Back</a>
+    </div>
+
+    <div class="demo-layout">
+        <h1 class="demo-title">Entity Spawner</h1>
+        <p class="demo-subtitle">Full Spawn &amp; States Simulation &mdash; Generate Entities, Advance Time, Watch Behavior Emerge</p>
+
+        <!-- Description + Technical Context (2-col) -->
+        <div data-embed-hide style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <div style="color: var(--parchment-dim); font-size: 0.95rem; line-height: 1.7;">
+                <p style="font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--lavender); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem;">What This Does</p>
+                <p>
+                    <strong style="color: var(--lavender);">Spawn &amp; States</strong> is a configurable state engine
+                    for generating entities with layered traits, dynamic variables, and emergent behavior &mdash;
+                    all driven by a single JSON config, no code required. The system works for any domain:
+                    RPG creatures, card game characters, NPCs, procedural items, or anything that needs
+                    randomized properties with interconnected behavior.
+                </p>
+                <p style="margin-top: 0.6rem;">
+                    This demo loads an <strong style="color: var(--lavender);">RPG creature config</strong> as an example.
+                    Each creature gets rolled attributes, weighted trait selection, and variables that tick over time.
+                    As variables cross thresholds, modifiers trigger. When the right combination lines up, compound states emerge.
+                </p>
+            </div>
+            <div style="color: var(--parchment-dim); font-size: 0.95rem; line-height: 1.7;">
+                <p style="font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--lavender); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem;">What To Watch For</p>
+                <p>
+                    <strong style="color: var(--lavender);">Health</strong> and <strong style="color: var(--lavender);">Stamina</strong>
+                    deplete over time. When they get low enough, modifiers like
+                    <em style="color: #d4a0b8;">Wounded</em> or <em style="color: #d4a0b8;">Exhausted</em> trigger automatically.
+                    <strong style="color: var(--lavender);">Rage</strong> accumulates &mdash; faster for Aggressive creatures, slower
+                    for Timid ones, because traits modify variable rates.
+                    When the right modifiers and traits combine,
+                    <strong style="color: var(--warning);">compound states</strong> emerge:
+                    an Enraged + Aggressive creature goes <em style="color: var(--warning);">Berserk</em>.
+                    Each entity behaves differently because its traits change the rules.
+                </p>
+            </div>
+        </div>
+
+        <!-- How To Use -->
+        <div class="context-panel" style="margin-bottom: 2rem;">
+            <div class="context-title">How To Use</div>
+            <div style="font-size: 0.85rem; color: var(--parchment-dim); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <strong style="color: var(--lavender);">Spawn &amp; tick.</strong>
+                    Click <strong>Spawn Creature</strong> to generate an entity, then use
+                    <strong>+5s</strong> or <strong>+15s</strong> to advance time.
+                    Turn on <strong>Auto-tick</strong> to watch things evolve on their own.
+                </div>
+                <div>
+                    <strong style="color: var(--lavender);">Watch the cards.</strong>
+                    Check the variable bars as they change each tick. When a bar drops low enough
+                    (or climbs high enough), new tags appear &mdash; those are modifiers activating.
+                    Check the event log at the bottom of each card for a history.
+                </div>
+                <div>
+                    <strong style="color: var(--lavender);">Hover the tags.</strong>
+                    Every trait, modifier, and compound has a tooltip explaining its
+                    effects &mdash; what it speeds up, slows down, or requires.
+                </div>
+            </div>
+        </div>
+
+        <!-- Spawn Logic Preview -->
+        <div data-embed-hide class="context-panel" style="margin-bottom: 2rem;">
+            <div class="context-title">Spawn Logic Preview</div>
+            <div style="font-size: 0.85rem; color: var(--parchment-dim); margin-bottom: 0.75rem;">
+                Spawn &amp; States doesn't just pick traits at random. An entity's attributes influence which traits it's
+                likely to get &mdash; higher Strength makes <em style="color: var(--lavender-glow);">Aggressive</em> more probable,
+                higher Vitality favors <em style="color: var(--lavender-glow);">Resilient</em>. These weights are all
+                configurable per-config. The table below shows the weight influences for this RPG creature example:
+            </div>
+            <div id="spawnLogicTable" style="overflow-x: auto;"></div>
+        </div>
+
+        <!-- How Spawn & States Works (above demo) -->
+        <div data-embed-hide class="context-panel" style="margin-bottom: 2rem;">
+            <div class="context-title">How Spawn &amp; States Works</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="context-text" style="font-size: 0.85rem;">
+                    <p>
+                        Spawn &amp; States processes entities through a layered cascade, all defined in a single
+                        JSON config. <strong>Attributes</strong> are rolled at spawn time from configured ranges.
+                        They influence which <strong>traits</strong> get selected from weighted pools &mdash; and
+                        traits selected at spawn time can affect which <strong>modifiers</strong> are more likely
+                        to fire downstream, because traits modify <strong>variable</strong> rates.
+                    </p>
+                    <p style="margin-top: 0.5rem;">
+                        <strong>Variables</strong> deplete or accumulate over time through the tick system.
+                        When variables cross configured thresholds, <strong>modifiers</strong> activate.
+                        Modifiers themselves feed back into the system &mdash; they can change variable rates,
+                        shift trait weights, and satisfy requirements for <strong>compound</strong> states.
+                        <strong>Derived values</strong> (like damage output) are computed from live state every tick.
+                    </p>
+                    <p style="margin-top: 0.6rem; font-size: 0.8rem; color: var(--ink-fade);">
+                        This demo uses an RPG creature config, but the same system could power tavern NPCs,
+                        card game characters, procedural items, or any entity with randomized, interconnected behavior.
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center;">
+                    <!-- Cyclical cascade diagram -->
+                    <div class="cascade-cycle">
+                        <div class="cycle-node cycle-attr" style="grid-area: attr;">Attributes</div>
+                        <div class="cycle-arrow" style="grid-area: a1;">&darr;</div>
+                        <div class="cycle-node cycle-trait" style="grid-area: trait;">Traits</div>
+                        <div class="cycle-arrow" style="grid-area: a2;">&darr;</div>
+                        <div class="cycle-node cycle-var" style="grid-area: var;">Variables</div>
+                        <div class="cycle-arrow" style="grid-area: a3;">&darr;</div>
+                        <div class="cycle-node cycle-mod" style="grid-area: mod;">Modifiers</div>
+                        <div class="cycle-arrow" style="grid-area: a4;">&darr;</div>
+                        <div class="cycle-node cycle-comp" style="grid-area: comp;">Compounds</div>
+                        <div class="cycle-feedback">
+                            <span class="feedback-label">modifiers feed back into variable rates &amp; trait weights</span>
+                        </div>
+                        <div class="cycle-node cycle-derived" style="grid-area: derived;">Derived Values</div>
+                        <div class="cycle-note" style="grid-area: note;">computed from live state every tick</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo section -->
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <span style="font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--lavender); letter-spacing: 0.12em; text-transform: uppercase;">Interactive Demo</span>
+            <span style="flex: 1; height: 1px; background: var(--ink-light);"></span>
+            <a href="javascript:void(0)" onclick="window.open(location.pathname+'?embed=1', '_blank')" style="font-size: 0.75rem; color: var(--parchment-dim); text-decoration: none; border: 1px solid var(--ink-light); padding: 0.2rem 0.6rem; border-radius: 3px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--lavender-dim)'; this.style.color='var(--lavender)'" onmouseout="this.style.borderColor='var(--ink-light)'; this.style.color='var(--parchment-dim)'">Open in new tab &nearr;</a>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-spawn" onclick="spawnCreature()">Spawn Creature</button>
+            <button class="btn btn-tick" onclick="tickAll(5)">+5s</button>
+            <button class="btn btn-tick" onclick="tickAll(15)">+15s</button>
+            <label class="auto-tick-label">
+                <input type="checkbox" id="autoTick" onchange="toggleAutoTick()"> Auto-tick
+            </label>
+            <div class="tick-speed">
+                <span>Speed:</span>
+                <input type="range" min="1" max="10" value="3" id="tickSpeed">
+            </div>
+            <button class="btn btn-clear" onclick="clearAll()">Clear</button>
+        </div>
+
+        <div class="entity-grid" id="entityGrid">
+            <div class="empty-state">Click "Spawn Creature" to generate an entity</div>
+        </div>
+
+        <div data-embed-hide class="context-panel">
+            <div class="context-title">See Also</div>
+            <div class="context-text" style="font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <p>
+                    The <a href="../formula-builder/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Formula Builder</a>
+                    shows how Spawn &amp; States computes derived values. Attributes like Strength and Defense
+                    feed into configurable formulas that produce things like damage output or max HP &mdash;
+                    recalculated every tick as entity state changes.
+                </p>
+                <p>
+                    The <a href="../conditional-logic/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Conditional Logic Builder</a>
+                    shows how modifier triggers work. The threshold conditions that make
+                    <em style="color: #d4a0b8;">Wounded</em> or <em style="color: #d4a0b8;">Enraged</em> appear on these
+                    entity cards are exactly the kind of conditions you build there.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="spawn-engine.js"></script>
+    <script>
+        let engine = null;
+        let entities = [];
+        let entityLogs = {};
+        let autoTickInterval = null;
+        let creatureCounter = 0;
+
+        const CREATURE_NAMES = [
+            'Grimfang', 'Ashveil', 'Thornback', 'Dusktalon', 'Ironhide', 'Blight', 'Cindermaw', 'Frostbane',
+            'Wraithclaw', 'Stonescale', 'Nettlebite', 'Emberfury', 'Rotbloom', 'Darkspine', 'Venomshade', 'Quakehorn',
+            'Nightmire', 'Dustfang', 'Scorchscale', 'Bleakwing', 'Bouldercrest', 'Mossgnaw', 'Dreadmaw', 'Slatecoil'
+        ];
+
+        // RPG creature config — uses same attributes as Formula Builder, same variables as Conditional Logic
+        const RPG_CONFIG = {
+            "id": "rpg-creature",
+            "name": "RPG Creature",
+            "version": "3.1",
+            "description": "Creatures for an RPG combat simulation.",
+            "nodes": [
+                // --- ATTRIBUTES (same as Formula Builder demo) ---
+                {"id":"attr_strength","name":"Strength","description":"Physical power","type":"attribute","config":{"min":1,"max":10,"defaultRange":[2,9],"precision":0}},
+                {"id":"attr_defense","name":"Defense","description":"Damage resistance","type":"attribute","config":{"min":1,"max":10,"defaultRange":[2,8],"precision":0}},
+                {"id":"attr_speed","name":"Speed","description":"Agility and reaction time","type":"attribute","config":{"min":1,"max":10,"defaultRange":[1,10],"precision":0}},
+                {"id":"attr_vitality","name":"Vitality","description":"Constitution and endurance","type":"attribute","config":{"min":1,"max":10,"defaultRange":[3,9],"precision":0}},
+                {"id":"attr_luck","name":"Luck","description":"Fortune and critical chance","type":"attribute","config":{"min":1,"max":10,"defaultRange":[1,8],"precision":0}},
+
+                // --- VARIABLES (same as Conditional Logic demo) ---
+                {"id":"var_health","name":"Health","description":"Depletes over time from attrition","type":"variable","config":{"min":0,"max":100,"initial":90,"initialRange":[70,100],"baseRate":-3,"changeMode":"timed","direction":"deplete"}},
+                {"id":"var_stamina","name":"Stamina","description":"Depletes faster than health","type":"variable","config":{"min":0,"max":100,"initial":80,"initialRange":[60,95],"baseRate":-5,"changeMode":"timed","direction":"deplete"}},
+                {"id":"var_mana","name":"Mana","description":"Magical energy, slowly regenerates","type":"variable","config":{"min":0,"max":100,"initial":50,"initialRange":[20,70],"baseRate":2,"changeMode":"timed","direction":"accumulate"}},
+                {"id":"var_rage","name":"Rage","description":"Builds over time in combat","type":"variable","config":{"min":0,"max":100,"initial":5,"initialRange":[0,20],"baseRate":4,"changeMode":"timed","direction":"accumulate"}},
+
+                // --- LAYER: Nature (combat personality) ---
+                {"id":"layer_nature","name":"Nature","description":"Core combat personality","type":"layer","config":{"order":1,"selection":{"mode":"weighted","maxItems":3,"initialRolls":2},"timing":{"rollAt":"spawn"},"itemIds":["item_aggressive","item_timid","item_cunning","item_resilient","item_volatile","item_stoic"]}},
+                {"id":"item_aggressive","name":"Aggressive","description":"Attacks relentlessly","type":"item","config":{"layerId":"layer_nature","selection":{"baseWeight":20},"incompatibleWith":["item_timid"]}},
+                {"id":"item_timid","name":"Timid","description":"Hesitant and defensive","type":"item","config":{"layerId":"layer_nature","selection":{"baseWeight":15},"incompatibleWith":["item_aggressive"]}},
+                {"id":"item_cunning","name":"Cunning","description":"Fights with strategy","type":"item","config":{"layerId":"layer_nature","selection":{"baseWeight":18},"incompatibleWith":[]}},
+                {"id":"item_resilient","name":"Resilient","description":"Hard to put down","type":"item","config":{"layerId":"layer_nature","selection":{"baseWeight":20},"incompatibleWith":["item_volatile"]}},
+                {"id":"item_volatile","name":"Volatile","description":"Unpredictable and explosive","type":"item","config":{"layerId":"layer_nature","selection":{"baseWeight":12},"incompatibleWith":["item_resilient","item_stoic"]}},
+                {"id":"item_stoic","name":"Stoic","description":"Endures without flinching","type":"item","config":{"layerId":"layer_nature","selection":{"baseWeight":15},"incompatibleWith":["item_volatile"]}},
+
+                // --- LAYER: Combat State (dynamic mood equivalent) ---
+                {"id":"layer_stance","name":"Stance","description":"Current combat posture","type":"layer","config":{"order":2,"selection":{"mode":"weighted","maxItems":2,"initialRolls":1},"timing":{"rollAt":"spawn"},"itemIds":["item_focused","item_guarded","item_reckless","item_wary"]}},
+                {"id":"item_focused","name":"Focused","description":"Concentrated and precise","type":"item","config":{"layerId":"layer_stance","selection":{"baseWeight":25},"incompatibleWith":["item_reckless"]}},
+                {"id":"item_guarded","name":"Guarded","description":"Defensive posture","type":"item","config":{"layerId":"layer_stance","selection":{"baseWeight":25},"incompatibleWith":["item_reckless"]}},
+                {"id":"item_reckless","name":"Reckless","description":"Attacking without caution","type":"item","config":{"layerId":"layer_stance","selection":{"baseWeight":15},"incompatibleWith":["item_focused","item_guarded"]}},
+                {"id":"item_wary","name":"Wary","description":"On edge, watching for threats","type":"item","config":{"layerId":"layer_stance","selection":{"baseWeight":15},"incompatibleWith":[]}},
+
+                // --- MODIFIERS (threshold-driven) ---
+                {"id":"mod_wounded","name":"Wounded","description":"Health getting low","type":"modifier","config":{"triggerType":"threshold","trigger":{"target":"var_health","operator":"<=","value":40},"autoRemove":{"target":"var_health","operator":">","value":60},"incompatibleWith":["mod_critical"]}},
+                {"id":"mod_critical","name":"Critical","description":"Near death","type":"modifier","config":{"triggerType":"threshold","trigger":{"target":"var_health","operator":"<=","value":15},"autoRemove":{"target":"var_health","operator":">","value":30},"incompatibleWith":["mod_wounded"]}},
+                {"id":"mod_exhausted","name":"Exhausted","description":"Stamina depleted","type":"modifier","config":{"triggerType":"threshold","trigger":{"target":"var_stamina","operator":"<=","value":20},"autoRemove":{"target":"var_stamina","operator":">","value":45},"incompatibleWith":["mod_second_wind"]}},
+                {"id":"mod_second_wind","name":"Second Wind","description":"Burst of renewed energy","type":"modifier","config":{"durationType":"timed","duration":60,"stacking":"refresh","incompatibleWith":["mod_exhausted"]}},
+                {"id":"mod_enraged","name":"Enraged","description":"Consumed by fury","type":"modifier","config":{"triggerType":"threshold","trigger":{"target":"var_rage","operator":">=","value":75},"autoRemove":{"target":"var_rage","operator":"<","value":50},"incompatibleWith":["mod_focused_strike"]}},
+                {"id":"mod_focused_strike","name":"Focused Strike","description":"Channeling precise power","type":"modifier","config":{"durationType":"timed","duration":45,"stacking":"refresh","incompatibleWith":["mod_enraged"]}},
+                {"id":"mod_mana_surge","name":"Mana Surge","description":"Overflowing with magical energy","type":"modifier","config":{"triggerType":"threshold","trigger":{"target":"var_mana","operator":">=","value":85},"autoRemove":{"target":"var_mana","operator":"<","value":65},"incompatibleWith":["mod_mana_drained"]}},
+                {"id":"mod_mana_drained","name":"Mana Drained","description":"Nearly empty on magical reserves","type":"modifier","config":{"triggerType":"threshold","trigger":{"target":"var_mana","operator":"<=","value":10},"autoRemove":{"target":"var_mana","operator":">","value":30},"incompatibleWith":["mod_mana_surge"]}},
+
+                // --- COMPOUNDS (emergent states) ---
+                {"id":"comp_berserk","name":"Berserk","description":"Enraged aggressive creature","type":"compound","config":{"requires":[{"modifier":"mod_enraged"},{"item":"item_aggressive"}],"requirementLogic":"all"}},
+                {"id":"comp_last_stand","name":"Last Stand","description":"Resilient creature near death","type":"compound","config":{"requires":[{"modifier":"mod_critical"},{"item":"item_resilient"}],"requirementLogic":"all"}},
+                {"id":"comp_cornered","name":"Cornered","description":"Exhausted and wounded","type":"compound","config":{"requires":[{"modifier":"mod_exhausted"},{"modifier":"mod_wounded"}],"requirementLogic":"all"}},
+                {"id":"comp_arcane_fury","name":"Arcane Fury","description":"Enraged with overflowing mana","type":"compound","config":{"requires":[{"modifier":"mod_enraged"},{"modifier":"mod_mana_surge"}],"requirementLogic":"all"}},
+
+                // --- DERIVED VALUE ---
+                {"id":"derived_damage","name":"Damage Output","description":"Base damage from stats","type":"derived","config":{"formula":"(attr_strength * 2) + attr_speed","min":3,"max":30}}
+            ],
+            "relationships": [
+                // Vitality slows health depletion
+                {"id":"rel_vit_health","sourceId":"attr_vitality","targetId":"var_health","type":"rate_modifier","config":{"operation":"multiply","value":0.9}},
+                // Defense slows stamina depletion
+                {"id":"rel_def_stamina","sourceId":"attr_defense","targetId":"var_stamina","type":"rate_modifier","config":{"operation":"multiply","value":0.92}},
+                // Speed increases rage buildup
+                {"id":"rel_spd_rage","sourceId":"attr_speed","targetId":"var_rage","type":"rate_modifier","config":{"operation":"multiply","value":1.1}},
+                // Luck boosts mana regen
+                {"id":"rel_luck_mana","sourceId":"attr_luck","targetId":"var_mana","type":"rate_modifier","config":{"operation":"multiply","value":1.15}},
+
+                // Strength → Aggressive weight
+                {"id":"rel_str_aggr","sourceId":"attr_strength","targetId":"item_aggressive","type":"weight_influence","config":{"operation":"add","value":3,"scaling":"perPoint","perPointSource":"attr_strength"}},
+                // Vitality → Resilient weight
+                {"id":"rel_vit_res","sourceId":"attr_vitality","targetId":"item_resilient","type":"weight_influence","config":{"operation":"add","value":3,"scaling":"perPoint","perPointSource":"attr_vitality"}},
+                // Speed → Cunning weight
+                {"id":"rel_spd_cun","sourceId":"attr_speed","targetId":"item_cunning","type":"weight_influence","config":{"operation":"add","value":2,"scaling":"perPoint","perPointSource":"attr_speed"}},
+                // Defense → Stoic weight
+                {"id":"rel_def_stoic","sourceId":"attr_defense","targetId":"item_stoic","type":"weight_influence","config":{"operation":"add","value":2,"scaling":"perPoint","perPointSource":"attr_defense"}},
+                // Luck → Focused stance
+                {"id":"rel_luck_focus","sourceId":"attr_luck","targetId":"item_focused","type":"weight_influence","config":{"operation":"add","value":2,"scaling":"perPoint","perPointSource":"attr_luck"}},
+
+                // Aggressive → faster rage buildup, faster stamina drain
+                {"id":"rel_aggr_rage","sourceId":"item_aggressive","targetId":"var_rage","type":"rate_modifier","config":{"operation":"multiply","value":1.3}},
+                {"id":"rel_aggr_stam","sourceId":"item_aggressive","targetId":"var_stamina","type":"rate_modifier","config":{"operation":"multiply","value":1.2}},
+                {"id":"rel_aggr_reck","sourceId":"item_aggressive","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":20}},
+                {"id":"rel_aggr_guard","sourceId":"item_aggressive","targetId":"item_guarded","type":"weight_influence","config":{"operation":"add","value":-15}},
+
+                // Timid → slower rage, less reckless
+                {"id":"rel_timid_rage","sourceId":"item_timid","targetId":"var_rage","type":"rate_modifier","config":{"operation":"multiply","value":0.6}},
+                {"id":"rel_timid_guard","sourceId":"item_timid","targetId":"item_guarded","type":"weight_influence","config":{"operation":"add","value":25}},
+                {"id":"rel_timid_wary","sourceId":"item_timid","targetId":"item_wary","type":"weight_influence","config":{"operation":"add","value":20}},
+                {"id":"rel_timid_reck","sourceId":"item_timid","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":-25}},
+
+                // Resilient → slower health drain
+                {"id":"rel_res_health","sourceId":"item_resilient","targetId":"var_health","type":"rate_modifier","config":{"operation":"multiply","value":0.8}},
+                {"id":"rel_res_guard","sourceId":"item_resilient","targetId":"item_guarded","type":"weight_influence","config":{"operation":"add","value":20}},
+                {"id":"rel_res_focus","sourceId":"item_resilient","targetId":"item_focused","type":"weight_influence","config":{"operation":"add","value":15}},
+
+                // Volatile → faster rage, faster mana regen, reckless
+                {"id":"rel_vol_rage","sourceId":"item_volatile","targetId":"var_rage","type":"rate_modifier","config":{"operation":"multiply","value":1.4}},
+                {"id":"rel_vol_mana","sourceId":"item_volatile","targetId":"var_mana","type":"rate_modifier","config":{"operation":"multiply","value":1.3}},
+                {"id":"rel_vol_reck","sourceId":"item_volatile","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":25}},
+
+                // Cunning → slower stamina drain, favors focused
+                {"id":"rel_cun_stam","sourceId":"item_cunning","targetId":"var_stamina","type":"rate_modifier","config":{"operation":"multiply","value":0.75}},
+                {"id":"rel_cun_focus","sourceId":"item_cunning","targetId":"item_focused","type":"weight_influence","config":{"operation":"add","value":25}},
+                {"id":"rel_cun_reck","sourceId":"item_cunning","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":-20}},
+
+                // Stoic → slower rage, endures longer
+                {"id":"rel_stoic_rage","sourceId":"item_stoic","targetId":"var_rage","type":"rate_modifier","config":{"operation":"multiply","value":0.7}},
+                {"id":"rel_stoic_stam","sourceId":"item_stoic","targetId":"var_stamina","type":"rate_modifier","config":{"operation":"multiply","value":0.85}},
+                {"id":"rel_stoic_guard","sourceId":"item_stoic","targetId":"item_guarded","type":"weight_influence","config":{"operation":"add","value":20}},
+                {"id":"rel_stoic_reck","sourceId":"item_stoic","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":-15}},
+
+                // Modifier → stance influences
+                {"id":"rel_wound_wary","sourceId":"mod_wounded","targetId":"item_wary","type":"weight_influence","config":{"operation":"add","value":20}},
+                {"id":"rel_wound_reck","sourceId":"mod_wounded","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":-15}},
+                {"id":"rel_crit_guard","sourceId":"mod_critical","targetId":"item_guarded","type":"weight_influence","config":{"operation":"add","value":-20}},
+                {"id":"rel_crit_wary","sourceId":"mod_critical","targetId":"item_wary","type":"weight_influence","config":{"operation":"add","value":30}},
+                {"id":"rel_exh_rage","sourceId":"mod_exhausted","targetId":"var_rage","type":"rate_modifier","config":{"operation":"multiply","value":0.5}},
+                {"id":"rel_exh_reck","sourceId":"mod_exhausted","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":-20}},
+                {"id":"rel_enrage_stam","sourceId":"mod_enraged","targetId":"var_stamina","type":"rate_modifier","config":{"operation":"multiply","value":1.5}},
+                {"id":"rel_enrage_reck","sourceId":"mod_enraged","targetId":"item_reckless","type":"weight_influence","config":{"operation":"add","value":30}},
+                {"id":"rel_enrage_focus","sourceId":"mod_enraged","targetId":"item_focused","type":"weight_influence","config":{"operation":"add","value":-25}},
+                {"id":"rel_surge_focus","sourceId":"mod_mana_surge","targetId":"item_focused","type":"weight_influence","config":{"operation":"add","value":20}},
+                {"id":"rel_drain_wary","sourceId":"mod_mana_drained","targetId":"item_wary","type":"weight_influence","config":{"operation":"add","value":15}}
+            ],
+            "engineConfig": {"tickRate": 1000, "maxSpawns": null}
+        };
+
+        // Init engine with RPG config
+        engine = new SpawnEngine(RPG_CONFIG);
+
+        // Build tooltip data from config relationships
+        function buildTooltipData() {
+            const tips = {};
+            const nodes = RPG_CONFIG.nodes;
+            const rels = RPG_CONFIG.relationships;
+            const nodeMap = {};
+            for (const n of nodes) nodeMap[n.id] = n;
+
+            // Initialize with node descriptions
+            for (const n of nodes) {
+                if (['item', 'modifier', 'compound'].includes(n.type)) {
+                    tips[n.id] = { desc: n.description || '', effects: [] };
+                }
+            }
+
+            // Gather effects from relationships
+            for (const r of rels) {
+                const source = nodeMap[r.sourceId];
+                const target = nodeMap[r.targetId];
+                if (!source || !target) continue;
+
+                if (tips[r.sourceId]) {
+                    if (r.type === 'rate_modifier') {
+                        const mult = r.config.value;
+                        const faster = mult > 1;
+                        const pct = Math.round(Math.abs(mult - 1) * 100);
+                        const dir = target.config?.direction;
+                        let verb;
+                        if (dir === 'deplete') {
+                            verb = faster ? `drains ${pct}% faster` : `drains ${pct}% slower`;
+                        } else if (dir === 'accumulate') {
+                            verb = faster ? `builds ${pct}% faster` : `builds ${pct}% slower`;
+                        } else {
+                            verb = `changes ${pct}% ${faster ? 'faster' : 'slower'}`;
+                        }
+                        // For deplete vars: slower drain is good, faster is bad
+                        // For accumulate vars: depends on context, but faster build is generally positive
+                        const isGood = dir === 'deplete' ? !faster : faster;
+                        tips[r.sourceId].effects.push({
+                            text: `${target.name} ${verb}`,
+                            positive: isGood
+                        });
+                    } else if (r.type === 'weight_influence' && target.type === 'item') {
+                        const val = r.config.value;
+                        const isBoost = val > 0;
+                        // Only show trait-to-stance influences, not attr-to-trait (those go in spawn table)
+                        if (source.type !== 'attribute') {
+                            tips[r.sourceId].effects.push({
+                                text: `${isBoost ? 'More' : 'Less'} likely to be ${target.name}`,
+                                positive: isBoost
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Compound requirements
+            for (const n of nodes) {
+                if (n.type === 'compound' && n.config?.requires) {
+                    const reqs = n.config.requires.map(req => {
+                        const refId = req.modifier || req.item;
+                        return nodeMap[refId]?.name || refId;
+                    });
+                    tips[n.id] = tips[n.id] || { desc: n.description || '', effects: [] };
+                    tips[n.id].requires = reqs;
+                }
+            }
+
+            // Modifier triggers
+            for (const n of nodes) {
+                if (n.type === 'modifier' && n.config?.trigger) {
+                    const t = n.config.trigger;
+                    const targetNode = nodeMap[t.target];
+                    tips[n.id] = tips[n.id] || { desc: n.description || '', effects: [] };
+                    tips[n.id].trigger = `${targetNode?.name || t.target} ${t.operator} ${t.value}`;
+                }
+            }
+
+            return tips;
+        }
+
+        const TOOLTIP_DATA = buildTooltipData();
+
+        function renderTooltip(id) {
+            const data = TOOLTIP_DATA[id];
+            if (!data) return '';
+
+            let html = '<div class="tooltip">';
+            if (data.desc) html += `<div class="tooltip-desc">${data.desc}</div>`;
+            if (data.trigger) html += `<div class="tooltip-effect">Triggers when <span class="eff-target">${data.trigger}</span></div>`;
+            if (data.requires) html += `<div class="tooltip-effect">Requires: <span class="eff-target">${data.requires.join(' + ')}</span></div>`;
+            for (const eff of data.effects) {
+                const cls = eff.positive ? 'eff-pos' : 'eff-neg';
+                html += `<div class="tooltip-effect"><span class="${cls}">${eff.text}</span></div>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // Build spawn logic table
+        function buildSpawnLogicTable() {
+            const nodes = RPG_CONFIG.nodes;
+            const rels = RPG_CONFIG.relationships;
+            const nodeMap = {};
+            for (const n of nodes) nodeMap[n.id] = n;
+
+            const attrs = nodes.filter(n => n.type === 'attribute');
+            const traits = nodes.filter(n => n.type === 'item' && nodeMap[n.config?.layerId]?.name === 'Nature');
+
+            // Build influence map: trait -> { attr -> value }
+            const influences = {};
+            for (const t of traits) {
+                influences[t.id] = {};
+                for (const a of attrs) influences[t.id][a.id] = 0;
+            }
+
+            for (const r of rels) {
+                if (r.type === 'weight_influence' && influences[r.targetId] && nodeMap[r.sourceId]?.type === 'attribute') {
+                    influences[r.targetId][r.sourceId] = r.config.value * (r.config.scaling === 'perPoint' ? 1 : 1);
+                }
+            }
+
+            const container = document.getElementById('spawnLogicTable');
+            if (!container) return;
+
+            let html = '<table style="width: 100%; border-collapse: collapse; font-family: \'JetBrains Mono\', monospace; font-size: 0.72rem;">';
+            html += '<thead><tr>';
+            html += '<th style="text-align: left; padding: 0.35rem 0.5rem; color: var(--lavender); border-bottom: 1px solid var(--ink-light); font-family: \'Cinzel\', serif; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;">Trait</th>';
+            html += '<th style="text-align: center; padding: 0.35rem 0.5rem; color: var(--ink-fade); border-bottom: 1px solid var(--ink-light); font-size: 0.65rem;">Base Weight</th>';
+            for (const a of attrs) {
+                html += `<th style="text-align: center; padding: 0.35rem 0.5rem; color: var(--sage); border-bottom: 1px solid var(--ink-light); font-size: 0.65rem;">${a.name}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            for (const t of traits) {
+                html += '<tr>';
+                html += `<td style="padding: 0.35rem 0.5rem; color: var(--lavender-glow); border-bottom: 1px solid rgba(74,63,54,0.4);">${t.name}</td>`;
+                html += `<td style="text-align: center; padding: 0.35rem 0.5rem; color: var(--parchment-dim); border-bottom: 1px solid rgba(74,63,54,0.4);">${t.config.selection.baseWeight}</td>`;
+                for (const a of attrs) {
+                    const val = influences[t.id][a.id];
+                    let display = '—';
+                    let color = 'var(--ink-fade)';
+                    if (val > 0) { display = `+${val}/pt`; color = 'var(--sage)'; }
+                    else if (val < 0) { display = `${val}/pt`; color = 'var(--danger)'; }
+                    html += `<td style="text-align: center; padding: 0.35rem 0.5rem; color: ${color}; border-bottom: 1px solid rgba(74,63,54,0.4);">${display}</td>`;
+                }
+                html += '</tr>';
+            }
+
+            html += '</tbody></table>';
+            html += '<div style="font-size: 0.72rem; color: var(--ink-fade); margin-top: 0.5rem; font-style: italic;">Base Weight is the starting chance. "+N/pt" means each point of that stat adds N to the weight. Higher total weight = more likely to be picked.</div>';
+            container.innerHTML = html;
+        }
+
+        function spawnCreature() {
+            if (!engine) return;
+
+            const entity = engine.spawn();
+            if (!entity) return;
+
+            entity.displayName = CREATURE_NAMES[creatureCounter % CREATURE_NAMES.length];
+            creatureCounter++;
+
+            entities.push(entity);
+            entityLogs[entity.id] = ['Spawned'];
+
+            renderAll();
+        }
+
+        function tickAll(seconds) {
+            if (!engine) return;
+
+            for (const entity of entities) {
+                const state = engine.entityManager.getState(entity.id);
+                if (!state) continue;
+
+                const prevMods = [...(state.activeModifiers || [])].map(m => m.id);
+                const prevComps = [...(state.activeCompounds || [])].map(c => c.id);
+
+                engine.tick(entity, seconds);
+
+                const newState = engine.entityManager.getState(entity.id);
+                if (!newState) continue;
+
+                // Log new modifiers
+                for (const mod of newState.activeModifiers || []) {
+                    if (!prevMods.includes(mod.id)) {
+                        entityLogs[entity.id].push(`<span class="log-mod">+${mod.name}</span> triggered`);
+                    }
+                }
+                for (const mid of prevMods) {
+                    if (!(newState.activeModifiers || []).find(m => m.id === mid)) {
+                        const name = engine.spawnManager.getNode(mid)?.name || mid;
+                        entityLogs[entity.id].push(`<span class="log-mod">-${name}</span> removed`);
+                    }
+                }
+
+                // Log new compounds
+                for (const comp of newState.activeCompounds || []) {
+                    if (!prevComps.includes(comp.id)) {
+                        entityLogs[entity.id].push(`<span class="log-comp">&#9733; ${comp.name}</span> emerged`);
+                    }
+                }
+                for (const cid of prevComps) {
+                    if (!(newState.activeCompounds || []).find(c => c.id === cid)) {
+                        const name = engine.spawnManager.getNode(cid)?.name || cid;
+                        entityLogs[entity.id].push(`<span class="log-comp">${name}</span> faded`);
+                    }
+                }
+            }
+
+            renderAll();
+        }
+
+        function clearAll() {
+            for (const entity of entities) {
+                try { engine.entityManager.remove(entity.id); } catch(e) {}
+            }
+            entities = [];
+            entityLogs = {};
+            creatureCounter = 0;
+            renderAll();
+        }
+
+        function toggleAutoTick() {
+            if (document.getElementById('autoTick').checked) {
+                autoTickInterval = setInterval(() => {
+                    const speed = parseInt(document.getElementById('tickSpeed').value);
+                    tickAll(speed);
+                }, 1000);
+            } else {
+                clearInterval(autoTickInterval);
+                autoTickInterval = null;
+            }
+        }
+
+        function removeEntity(id) {
+            try { engine.entityManager.remove(id); } catch(e) {}
+            entities = entities.filter(e => e.id !== id);
+            delete entityLogs[id];
+            renderAll();
+        }
+
+        function renderAll() {
+            const grid = document.getElementById('entityGrid');
+
+            if (entities.length === 0) {
+                grid.innerHTML = '<div class="empty-state">Click "Spawn Creature" to generate an entity</div>';
+                return;
+            }
+
+            grid.innerHTML = entities.map(entity => {
+                const state = engine.entityManager.getState(entity.id);
+                if (!state) return '';
+
+                const hasComp = (state.activeCompounds || []).length > 0;
+                const hasCrit = (state.activeModifiers || []).some(m =>
+                    m.name?.toLowerCase().includes('critical') || m.name?.toLowerCase().includes('berserk'));
+
+                let cls = 'entity-card';
+                if (hasCrit) cls += ' critical';
+                else if (hasComp) cls += ' has-compound';
+
+                // Traits — separate nature from stance
+                const traits = (state.activeTraits || []);
+                const stanceTraits = traits.filter(t => {
+                    const node = engine.spawnManager.getNode(t.id);
+                    const layerId = node?.config?.layerId || node?.layerId || '';
+                    return layerId.includes('stance');
+                });
+                const natureTraits = traits.filter(t => !stanceTraits.includes(t));
+
+                // Entity subtype from stance
+                const stanceName = stanceTraits.length > 0 ? stanceTraits[0].name : 'Creature';
+
+                return `
+                    <div class="${cls}">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <div>
+                                <div class="entity-name">${entity.displayName || entity.id}</div>
+                                <div class="entity-type">${stanceName}</div>
+                            </div>
+                            <span style="cursor:pointer; color:var(--ink-fade); font-size:0.9rem;" onclick="removeEntity('${entity.id}')" title="Dismiss">&times;</span>
+                        </div>
+
+                        <div class="stat-label">Attributes</div>
+                        <div class="attr-row">
+                            ${Object.entries(state.attributes).map(([id, val]) => {
+                                const node = engine.spawnManager.getNode(id);
+                                const name = (node?.name || id).slice(0, 3);
+                                return `<span class="attr-badge"><span class="attr-name">${name}</span><span class="attr-val">${val}</span></span>`;
+                            }).join('')}
+                        </div>
+
+                        <div class="stat-label">Variables</div>
+                        ${Object.entries(state.variables).map(([id, v]) => {
+                            const node = engine.spawnManager.getNode(id);
+                            const name = (node?.name || id).slice(0, 5);
+                            const pct = ((v.value - v.min) / (v.max - v.min)) * 100;
+                            let barCls = '';
+                            if (pct < 25) barCls = 'low';
+                            else if (pct < 50) barCls = 'mid';
+                            const rate = v.rate ?? 0;
+                            const rateCls = rate < 0 ? 'neg' : rate > 0 ? 'pos' : '';
+                            const rateStr = rate > 0 ? `+${rate.toFixed(1)}` : rate.toFixed(1);
+                            return `
+                                <div class="var-row">
+                                    <span class="var-name">${name}</span>
+                                    <div class="var-bar"><div class="var-bar-fill ${barCls}" style="width:${Math.max(0,Math.min(100,pct))}%"></div></div>
+                                    <span class="var-val">${v.value.toFixed(0)}</span>
+                                    <span class="var-rate ${rateCls}">${rateStr}/s</span>
+                                </div>
+                            `;
+                        }).join('')}
+
+                        ${natureTraits.length ? `
+                            <div class="stat-label">Traits</div>
+                            <div class="tags">${natureTraits.map(t => `<span class="tag trait">${t.name}${renderTooltip(t.id)}</span>`).join('')}</div>
+                        ` : ''}
+
+                        ${stanceTraits.length ? `
+                            <div class="stat-label">Stance</div>
+                            <div class="tags">${stanceTraits.map(t => `<span class="tag trait">${t.name}${renderTooltip(t.id)}</span>`).join('')}</div>
+                        ` : ''}
+
+                        ${(state.activeModifiers || []).length ? `
+                            <div class="stat-label">Modifiers</div>
+                            <div class="tags">${state.activeModifiers.map(m => `<span class="tag mod">${m.name}${renderTooltip(m.id)}</span>`).join('')}</div>
+                        ` : ''}
+
+                        ${(state.activeCompounds || []).length ? `
+                            <div class="stat-label">Compounds</div>
+                            <div class="tags">${state.activeCompounds.map(c => `<span class="tag comp">${c.name}${renderTooltip(c.id)}</span>`).join('')}</div>
+                        ` : ''}
+
+                        <div class="entity-log">
+                            ${(entityLogs[entity.id] || []).slice(-5).map(l => `<div class="log-entry">${l}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Build the spawn logic table on page load
+        buildSpawnLogicTable();
+    </script>
+</body>
+</html>

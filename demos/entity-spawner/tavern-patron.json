@@ -1,0 +1,440 @@
+{
+  "id": "tavern-patron",
+  "name": "Tavern Patron",
+  "version": "3.1",
+  "description": "NPCs for a tavern management sim. Patrons have personalities, moods that change based on needs, and compound states like 'hangry'.",
+  "nodes": [
+    {
+      "id": "attr_patience",
+      "name": "Patience",
+      "description": "How long they'll wait before getting upset",
+      "type": "attribute",
+      "config": { "min": 1, "max": 10, "defaultRange": [3, 8], "precision": 0 }
+    },
+    {
+      "id": "attr_generosity",
+      "name": "Generosity",
+      "description": "How much they tip and spend",
+      "type": "attribute",
+      "config": { "min": 1, "max": 10, "defaultRange": [2, 9], "precision": 0 }
+    },
+    {
+      "id": "attr_sociability",
+      "name": "Sociability",
+      "description": "How much they enjoy company",
+      "type": "attribute",
+      "config": { "min": 1, "max": 10, "defaultRange": [1, 10], "precision": 0 }
+    },
+    {
+      "id": "attr_charm",
+      "name": "Charm",
+      "description": "How likeable they are to others",
+      "type": "attribute",
+      "config": { "min": 1, "max": 10, "defaultRange": [2, 8], "precision": 0 }
+    },
+
+    {
+      "id": "var_hunger",
+      "name": "Hunger",
+      "description": "Depletes over time, causes irritability when low",
+      "type": "variable",
+      "config": { "min": 0, "max": 100, "initial": 80, "initialRange": [60, 95], "baseRate": -5, "changeMode": "timed", "direction": "deplete" }
+    },
+    {
+      "id": "var_thirst",
+      "name": "Thirst",
+      "description": "Depletes faster than hunger",
+      "type": "variable",
+      "config": { "min": 0, "max": 100, "initial": 70, "initialRange": [50, 90], "baseRate": -8, "changeMode": "timed", "direction": "deplete" }
+    },
+    {
+      "id": "var_boredom",
+      "name": "Boredom",
+      "description": "Accumulates over time, needs entertainment",
+      "type": "variable",
+      "config": { "min": 0, "max": 100, "initial": 10, "initialRange": [0, 30], "baseRate": 3, "changeMode": "timed", "direction": "accumulate" }
+    },
+    {
+      "id": "var_intoxication",
+      "name": "Intoxication",
+      "description": "Increases with drinks, slowly decreases",
+      "type": "variable",
+      "config": { "min": 0, "max": 100, "initial": 0, "initialRange": [0, 15], "baseRate": -2, "changeMode": "timed", "direction": "deplete" }
+    },
+
+    {
+      "id": "layer_personality",
+      "name": "Personality",
+      "description": "Core personality traits (pick up to 3)",
+      "type": "layer",
+      "config": {
+        "order": 1,
+        "selection": { "mode": "weighted", "maxItems": 3, "initialRolls": 2 },
+        "timing": { "rollAt": "spawn" },
+        "itemIds": ["item_optimist", "item_pessimist", "item_social_butterfly", "item_introvert", "item_hothead", "item_mellow"]
+      }
+    },
+    {
+      "id": "item_optimist",
+      "name": "Optimist",
+      "description": "Sees the bright side, slower to anger",
+      "type": "item",
+      "config": {
+        "layerId": "layer_personality",
+        "selection": { "baseWeight": 25 },
+        "incompatibleWith": ["item_pessimist"]
+      }
+    },
+    {
+      "id": "item_pessimist",
+      "name": "Pessimist",
+      "description": "Expects the worst, quick to complain",
+      "type": "item",
+      "config": {
+        "layerId": "layer_personality",
+        "selection": { "baseWeight": 20 },
+        "incompatibleWith": ["item_optimist"]
+      }
+    },
+    {
+      "id": "item_social_butterfly",
+      "name": "Social Butterfly",
+      "description": "Loves conversation, gets bored when alone",
+      "type": "item",
+      "config": {
+        "layerId": "layer_personality",
+        "selection": { "baseWeight": 15 },
+        "incompatibleWith": ["item_introvert"]
+      }
+    },
+    {
+      "id": "item_introvert",
+      "name": "Introvert",
+      "description": "Prefers quiet corners, dislikes crowds",
+      "type": "item",
+      "config": {
+        "layerId": "layer_personality",
+        "selection": { "baseWeight": 5 },
+        "incompatibleWith": ["item_social_butterfly"]
+      }
+    },
+    {
+      "id": "item_hothead",
+      "name": "Hothead",
+      "description": "Quick temper, but also quick to forgive",
+      "type": "item",
+      "config": {
+        "layerId": "layer_personality",
+        "selection": { "baseWeight": 15 },
+        "incompatibleWith": ["item_mellow"]
+      }
+    },
+    {
+      "id": "item_mellow",
+      "name": "Mellow",
+      "description": "Hard to rattle, goes with the flow",
+      "type": "item",
+      "config": {
+        "layerId": "layer_personality",
+        "selection": { "baseWeight": 20 },
+        "incompatibleWith": ["item_hothead"]
+      }
+    },
+
+    {
+      "id": "layer_mood",
+      "name": "Current Mood",
+      "description": "Dynamic mood states - how they're feeling right now",
+      "type": "layer",
+      "config": {
+        "order": 2,
+        "selection": { "mode": "weighted", "maxItems": 2, "initialRolls": 1 },
+        "timing": { "rollAt": "spawn" },
+        "itemIds": ["item_cheerful", "item_content", "item_grumpy", "item_anxious"]
+      }
+    },
+    {
+      "id": "item_cheerful",
+      "name": "Cheerful",
+      "description": "In a great mood, tips well",
+      "type": "item",
+      "config": {
+        "layerId": "layer_mood",
+        "selection": { "baseWeight": 20 },
+        "incompatibleWith": ["item_grumpy"]
+      }
+    },
+    {
+      "id": "item_content",
+      "name": "Content",
+      "description": "Satisfied with the situation",
+      "type": "item",
+      "config": {
+        "layerId": "layer_mood",
+        "selection": { "baseWeight": 30 },
+        "incompatibleWith": ["item_grumpy", "item_anxious"]
+      }
+    },
+    {
+      "id": "item_grumpy",
+      "name": "Grumpy",
+      "description": "In a bad mood, easily irritated",
+      "type": "item",
+      "config": {
+        "layerId": "layer_mood",
+        "selection": { "baseWeight": 15 },
+        "incompatibleWith": ["item_cheerful", "item_content"]
+      }
+    },
+    {
+      "id": "item_anxious",
+      "name": "Anxious",
+      "description": "Nervous and on edge",
+      "type": "item",
+      "config": {
+        "layerId": "layer_mood",
+        "selection": { "baseWeight": 10 },
+        "incompatibleWith": ["item_content"]
+      }
+    },
+
+    {
+      "id": "mod_well_fed",
+      "name": "Well Fed",
+      "description": "Just ate, satisfied",
+      "type": "modifier",
+      "config": {
+        "durationType": "timed",
+        "duration": 60,
+        "stacking": "refresh",
+        "incompatibleWith": ["mod_starving"]
+      }
+    },
+    {
+      "id": "mod_hungry",
+      "name": "Hungry",
+      "description": "Getting hungry - should eat soon",
+      "type": "modifier",
+      "config": {
+        "triggerType": "threshold",
+        "trigger": { "target": "var_hunger", "operator": "<=", "value": 40 },
+        "autoRemove": { "target": "var_hunger", "operator": ">", "value": 60 },
+        "incompatibleWith": ["mod_well_fed", "mod_starving"]
+      }
+    },
+    {
+      "id": "mod_starving",
+      "name": "Starving",
+      "description": "Desperately hungry - needs food now",
+      "type": "modifier",
+      "config": {
+        "triggerType": "threshold",
+        "trigger": { "target": "var_hunger", "operator": "<=", "value": 20 },
+        "autoRemove": { "target": "var_hunger", "operator": ">", "value": 40 },
+        "incompatibleWith": ["mod_well_fed", "mod_hungry"]
+      }
+    },
+    {
+      "id": "mod_refreshed",
+      "name": "Refreshed",
+      "description": "Just had a drink, thirst quenched",
+      "type": "modifier",
+      "config": {
+        "durationType": "timed",
+        "duration": 45,
+        "stacking": "refresh",
+        "incompatibleWith": ["mod_parched"]
+      }
+    },
+    {
+      "id": "mod_parched",
+      "name": "Parched",
+      "description": "Desperately thirsty - needs a drink now",
+      "type": "modifier",
+      "config": {
+        "triggerType": "threshold",
+        "trigger": { "target": "var_thirst", "operator": "<=", "value": 15 },
+        "autoRemove": { "target": "var_thirst", "operator": ">", "value": 35 },
+        "incompatibleWith": ["mod_refreshed"]
+      }
+    },
+    {
+      "id": "mod_bored_stiff",
+      "name": "Bored Stiff",
+      "description": "Extremely bored, might leave",
+      "type": "modifier",
+      "config": {
+        "triggerType": "threshold",
+        "trigger": { "target": "var_boredom", "operator": ">=", "value": 80 },
+        "autoRemove": { "target": "var_boredom", "operator": "<", "value": 60 },
+        "incompatibleWith": ["mod_entertained"]
+      }
+    },
+    {
+      "id": "mod_tipsy",
+      "name": "Tipsy",
+      "description": "Pleasantly buzzed",
+      "type": "modifier",
+      "config": {
+        "durationType": "timed",
+        "duration": 120,
+        "stacking": "stack",
+        "maxStacks": 3
+      }
+    },
+    {
+      "id": "mod_entertained",
+      "name": "Entertained",
+      "description": "Enjoying the entertainment",
+      "type": "modifier",
+      "config": {
+        "durationType": "timed",
+        "duration": 45,
+        "stacking": "refresh",
+        "incompatibleWith": ["mod_bored_stiff"]
+      }
+    },
+
+    {
+      "id": "comp_hangry",
+      "name": "Hangry",
+      "description": "Hungry AND grumpy - watch out!",
+      "type": "compound",
+      "config": {
+        "requires": [
+          { "modifier": "mod_starving" },
+          { "item": "item_grumpy" }
+        ],
+        "requirementLogic": "all"
+      }
+    },
+    {
+      "id": "comp_jolly_drunk",
+      "name": "Jolly Drunk",
+      "description": "Tipsy optimist having a great time",
+      "type": "compound",
+      "config": {
+        "requires": [
+          { "modifier": "mod_tipsy" },
+          { "item": "item_cheerful" }
+        ],
+        "requirementLogic": "all"
+      }
+    },
+    {
+      "id": "comp_wallflower",
+      "name": "Wallflower",
+      "description": "Bored introvert sitting alone",
+      "type": "compound",
+      "config": {
+        "requires": [
+          { "item": "item_introvert" },
+          { "modifier": "mod_bored_stiff" }
+        ],
+        "requirementLogic": "all"
+      }
+    },
+    {
+      "id": "comp_life_of_party",
+      "name": "Life of the Party",
+      "description": "Social butterfly who's tipsy and cheerful",
+      "type": "compound",
+      "config": {
+        "requires": [
+          { "item": "item_social_butterfly" },
+          { "modifier": "mod_tipsy" },
+          { "item": "item_cheerful" }
+        ],
+        "requirementLogic": "all"
+      }
+    },
+
+    {
+      "id": "derived_tip_multiplier",
+      "name": "Tip Multiplier",
+      "description": "How much they'll tip based on generosity and mood",
+      "type": "derived",
+      "config": {
+        "formula": "(attr_generosity / 10) * (var_hunger > 50 ? 1.2 : 0.8)",
+        "min": 0.5,
+        "max": 2.0
+      }
+    }
+  ],
+  "relationships": [
+    { "id": "rel_patience_boredom", "sourceId": "attr_patience", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0.85 } },
+    { "id": "rel_patience_mellow", "sourceId": "attr_patience", "targetId": "item_mellow", "type": "weight_influence", "config": { "operation": "add", "value": 3, "scaling": "perPoint", "perPointSource": "attr_patience" } },
+    { "id": "rel_patience_hothead", "sourceId": "attr_patience", "targetId": "item_hothead", "type": "weight_influence", "config": { "operation": "add", "value": -3, "scaling": "perPoint", "perPointSource": "attr_patience" } },
+
+    { "id": "rel_generosity_cheerful", "sourceId": "attr_generosity", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": 2, "scaling": "perPoint", "perPointSource": "attr_generosity" } },
+    { "id": "rel_generosity_optimist", "sourceId": "attr_generosity", "targetId": "item_optimist", "type": "weight_influence", "config": { "operation": "add", "value": 2, "scaling": "perPoint", "perPointSource": "attr_generosity" } },
+
+    { "id": "rel_sociability_social", "sourceId": "attr_sociability", "targetId": "item_social_butterfly", "type": "weight_influence", "config": { "operation": "add", "value": 3, "scaling": "perPoint", "perPointSource": "attr_sociability" } },
+    { "id": "rel_sociability_introvert", "sourceId": "attr_sociability", "targetId": "item_introvert", "type": "weight_influence", "config": { "operation": "add", "value": 2, "scaling": "perPoint", "perPointSource": "attr_sociability", "invert": true } },
+    { "id": "rel_sociability_boredom", "sourceId": "attr_sociability", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": 1.15 } },
+
+    { "id": "rel_charm_content", "sourceId": "attr_charm", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": 2, "scaling": "perPoint", "perPointSource": "attr_charm" } },
+
+    { "id": "rel_optimist_cheerful", "sourceId": "item_optimist", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": 30 } },
+    { "id": "rel_optimist_hunger", "sourceId": "item_optimist", "targetId": "var_hunger", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0.9 } },
+    { "id": "rel_optimist_grumpy", "sourceId": "item_optimist", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": -25 } },
+
+    { "id": "rel_pessimist_grumpy", "sourceId": "item_pessimist", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": 25 } },
+    { "id": "rel_pessimist_cheerful", "sourceId": "item_pessimist", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": -20 } },
+    { "id": "rel_pessimist_boredom", "sourceId": "item_pessimist", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": 1.25 } },
+    { "id": "rel_pessimist_anxious", "sourceId": "item_pessimist", "targetId": "item_anxious", "type": "weight_influence", "config": { "operation": "add", "value": 20 } },
+
+    { "id": "rel_social_boredom", "sourceId": "item_social_butterfly", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": 1.3 } },
+    { "id": "rel_social_cheerful", "sourceId": "item_social_butterfly", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+
+    { "id": "rel_introvert_boredom", "sourceId": "item_introvert", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0.7 } },
+    { "id": "rel_introvert_content", "sourceId": "item_introvert", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": 20 } },
+    { "id": "rel_introvert_anxious", "sourceId": "item_introvert", "targetId": "item_anxious", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+
+    { "id": "rel_hothead_hunger", "sourceId": "item_hothead", "targetId": "var_hunger", "type": "rate_modifier", "config": { "operation": "multiply", "value": 1.3 } },
+    { "id": "rel_hothead_grumpy", "sourceId": "item_hothead", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": 20 } },
+    { "id": "rel_hothead_thirst", "sourceId": "item_hothead", "targetId": "var_thirst", "type": "rate_modifier", "config": { "operation": "multiply", "value": 1.2 } },
+
+    { "id": "rel_mellow_boredom", "sourceId": "item_mellow", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0.7 } },
+    { "id": "rel_mellow_content", "sourceId": "item_mellow", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": 25 } },
+    { "id": "rel_mellow_grumpy", "sourceId": "item_mellow", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": -15 } },
+
+    { "id": "rel_hungry_grumpy", "sourceId": "mod_hungry", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+    { "id": "rel_hungry_cheerful", "sourceId": "mod_hungry", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": -10 } },
+    { "id": "rel_hungry_content", "sourceId": "mod_hungry", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": -10 } },
+
+    { "id": "rel_starving_grumpy", "sourceId": "mod_starving", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": 35 } },
+    { "id": "rel_starving_cheerful", "sourceId": "mod_starving", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": -25 } },
+    { "id": "rel_starving_content", "sourceId": "mod_starving", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": -20 } },
+
+    { "id": "rel_parched_grumpy", "sourceId": "mod_parched", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": 25 } },
+    { "id": "rel_parched_intox", "sourceId": "mod_parched", "targetId": "var_intoxication", "type": "rate_modifier", "config": { "operation": "multiply", "value": 1.5 } },
+    { "id": "rel_parched_anxious", "sourceId": "mod_parched", "targetId": "item_anxious", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+
+    { "id": "rel_bored_grumpy", "sourceId": "mod_bored_stiff", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": 20 } },
+    { "id": "rel_bored_content", "sourceId": "mod_bored_stiff", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": -30 } },
+
+    { "id": "rel_wellfed_hunger", "sourceId": "mod_well_fed", "targetId": "var_hunger", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0 } },
+    { "id": "rel_wellfed_cheerful", "sourceId": "mod_well_fed", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": 20 } },
+    { "id": "rel_wellfed_content", "sourceId": "mod_well_fed", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+
+    { "id": "rel_refreshed_thirst", "sourceId": "mod_refreshed", "targetId": "var_thirst", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0 } },
+    { "id": "rel_refreshed_cheerful", "sourceId": "mod_refreshed", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+    { "id": "rel_refreshed_content", "sourceId": "mod_refreshed", "targetId": "item_content", "type": "weight_influence", "config": { "operation": "add", "value": 10 } },
+
+    { "id": "rel_tipsy_social", "sourceId": "mod_tipsy", "targetId": "item_social_butterfly", "type": "weight_influence", "config": { "operation": "add", "value": 20 } },
+    { "id": "rel_tipsy_cheerful", "sourceId": "mod_tipsy", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+    { "id": "rel_tipsy_introvert", "sourceId": "mod_tipsy", "targetId": "item_introvert", "type": "weight_influence", "config": { "operation": "add", "value": -15 } },
+    { "id": "rel_tipsy_boredom", "sourceId": "mod_tipsy", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0.6 } },
+    { "id": "rel_tipsy_intox", "sourceId": "mod_tipsy", "targetId": "var_intoxication", "type": "rate_modifier", "config": { "operation": "multiply", "value": 0.5 } },
+    { "id": "rel_tipsy_anxious", "sourceId": "mod_tipsy", "targetId": "item_anxious", "type": "weight_influence", "config": { "operation": "add", "value": -20 } },
+
+    { "id": "rel_entertained_boredom", "sourceId": "mod_entertained", "targetId": "var_boredom", "type": "rate_modifier", "config": { "operation": "multiply", "value": -1.5 } },
+    { "id": "rel_entertained_cheerful", "sourceId": "mod_entertained", "targetId": "item_cheerful", "type": "weight_influence", "config": { "operation": "add", "value": 15 } },
+    { "id": "rel_entertained_grumpy", "sourceId": "mod_entertained", "targetId": "item_grumpy", "type": "weight_influence", "config": { "operation": "add", "value": -20 } }
+  ],
+  "engineConfig": {
+    "tickRate": 1000,
+    "maxSpawns": null
+  }
+}

@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Documentation - Spawn & States Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --shadow: #1a1512;
+            --panel: #282119;
+            --panel-light: #352b22;
+            --ink: #4a3f35;
+            --ink-light: #5a4d42;
+            --ink-fade: #8a7d70;
+            --parchment: #f0e8dc;
+            --parchment-dim: #d4c9bc;
+            --lavender: #c9a0d9;
+            --lavender-glow: #dfc0eb;
+            --lavender-dim: #a080b0;
+            --sage: #a8d090;
+            --sage-glow: #c4e8ac;
+            --sage-dim: #88b070;
+            --copper: var(--lavender);
+            --copper-glow: var(--lavender-glow);
+            --warning: #e0c080;
+            --danger: #d0a0a0;
+            --accent-blue: #80a0c0;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--shadow);
+            color: var(--parchment);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--shadow); }
+        ::-webkit-scrollbar-thumb { background: var(--ink-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--copper); }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: rgba(13, 11, 10, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--ink-light);
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            color: var(--copper);
+            text-decoration: none;
+            letter-spacing: 0.1em;
+        }
+
+        .nav-logo:hover { color: var(--copper-glow); }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--parchment);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.05em;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--copper); }
+
+        /* Layout */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 3rem 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ink);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: var(--lavender);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+
+        .section-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--ink-light), transparent);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 6rem 0 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.6rem;
+            color: var(--parchment);
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero .subtitle {
+            color: var(--parchment-dim);
+            font-size: 1.05rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Table of Contents */
+        .toc {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .toc a {
+            color: var(--parchment-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .toc a:hover {
+            color: var(--lavender);
+            border-color: var(--lavender);
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+        }
+
+        .card h4 {
+            font-family: 'Cinzel', serif;
+            color: var(--sage-glow);
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .card p, .card li {
+            color: var(--parchment-dim);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .card ul {
+            padding-left: 1.2rem;
+            margin-top: 0.5rem;
+        }
+
+        .card li {
+            margin-bottom: 0.25rem;
+        }
+
+        .card .label {
+            font-family: 'Cinzel', serif;
+            color: var(--lavender-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .code-header {
+            background: var(--panel-light);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--ink-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--ink-fade);
+        }
+
+        .code-block pre {
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: var(--parchment-dim);
+        }
+
+        .c-comment { color: var(--ink-fade); }
+        .c-keyword { color: var(--lavender); }
+        .c-string { color: var(--sage); }
+        .c-method { color: var(--warning); }
+        .c-type { color: var(--accent-blue); }
+        .c-removed { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .c-added { color: var(--sage-glow); }
+
+        /* Cascade diagram */
+        .cascade-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+            padding: 1.5rem 1rem;
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+        }
+
+        .cascade-node {
+            padding: 0.5rem 0.9rem;
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .cascade-node.attr { color: var(--sage); border-color: var(--sage-dim); }
+        .cascade-node.trait { color: var(--lavender); border-color: var(--lavender-dim); }
+        .cascade-node.var { color: var(--warning); border-color: #b09060; }
+        .cascade-node.mod { color: #d0a0a0; border-color: #b08080; }
+        .cascade-node.comp { color: #c08080; border-color: #a06060; }
+        .cascade-node.derived { color: var(--accent-blue); border-color: #6080a0; }
+
+        .cascade-arrow {
+            color: var(--ink-fade);
+            font-size: 1.2rem;
+            padding: 0 0.3rem;
+        }
+
+        .cascade-caption {
+            text-align: center;
+            color: var(--parchment-dim);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* Relationship types */
+        .rel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .rel-card {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1rem;
+        }
+
+        .rel-card h5 {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--lavender);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .rel-card p {
+            color: var(--parchment-dim);
+            font-size: 0.85rem;
+        }
+
+        /* Performance cards */
+        .perf-card {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .perf-card h4 {
+            font-family: 'Cinzel', serif;
+            color: var(--sage-glow);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .perf-card p {
+            color: var(--parchment-dim);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 0.75rem;
+        }
+
+        .perf-before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        @media (max-width: 600px) {
+            .perf-before-after { grid-template-columns: 1fr; }
+        }
+
+        .perf-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+        }
+
+        .perf-label.before { color: var(--danger); }
+        .perf-label.after { color: var(--sage); }
+
+        /* API table */
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+
+        .api-table th {
+            font-family: 'Cinzel', serif;
+            color: var(--lavender);
+            text-align: left;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid var(--ink-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .api-table td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid var(--ink);
+            color: var(--parchment-dim);
+            vertical-align: top;
+        }
+
+        .api-table code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--warning);
+        }
+
+        .api-table tr:hover td {
+            background: rgba(201, 160, 217, 0.03);
+        }
+
+        /* Events table */
+        .event-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--lavender);
+            font-size: 0.8rem;
+        }
+
+        /* Inline code */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--warning);
+        }
+
+        /* General content */
+        .content p {
+            color: var(--parchment-dim);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .content h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--parchment);
+            font-size: 0.95rem;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .content ul, .content ol {
+            color: var(--parchment-dim);
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .content li {
+            margin-bottom: 0.3rem;
+        }
+
+        strong { color: var(--parchment); font-weight: 500; }
+
+        /* Back link */
+        .back-section {
+            text-align: center;
+            padding: 2rem 0 3rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--parchment-dim);
+            text-decoration: none;
+            padding: 0.6rem 1.5rem;
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--lavender);
+            border-color: var(--lavender);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { gap: 1rem; }
+            .nav-links a { font-size: 0.8rem; }
+            .container { padding: 0 1.25rem; }
+            .hero h1 { font-size: 1.3rem; }
+            .cascade-flow { flex-direction: column; gap: 0.25rem; }
+            .cascade-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="../index.html" class="nav-logo">Spawn & States</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">Project</a></li>
+                <li><a href="../../../index.html#engine">Portfolio</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="hero">
+        <div class="container">
+            <h1>Technical Documentation</h1>
+            <p class="subtitle">Architecture, design decisions, performance characteristics, and API reference for the Spawn & States engine.</p>
+
+            <div class="toc">
+                <a href="#architecture">Architecture</a>
+                <a href="#decisions">Design Decisions</a>
+                <a href="#performance">Performance</a>
+                <a href="#scalability">Scalability</a>
+                <a href="#api">API Reference</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Architecture Overview -->
+    <section id="architecture" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Architecture</h2>
+            </div>
+
+            <div class="content">
+                <p>Spawn & States uses a <strong>layered cascade</strong> architecture. Each level in the cascade feeds into the next through configurable relationships, creating emergent behavior from simple rules.</p>
+
+                <div class="cascade-flow">
+                    <div class="cascade-node attr">Attributes</div>
+                    <span class="cascade-arrow">&rarr;</span>
+                    <div class="cascade-node trait">Traits</div>
+                    <span class="cascade-arrow">&rarr;</span>
+                    <div class="cascade-node var">Variables</div>
+                    <span class="cascade-arrow">&rarr;</span>
+                    <div class="cascade-node mod">Modifiers</div>
+                    <span class="cascade-arrow">&rarr;</span>
+                    <div class="cascade-node comp">Compounds</div>
+                    <span class="cascade-arrow">&rarr;</span>
+                    <div class="cascade-node derived">Derived</div>
+                </div>
+                <p class="cascade-caption">Modifiers feed back into variable rates and trait weights, creating dynamic feedback loops.</p>
+
+                <h3>Two-Phase Lifecycle</h3>
+                <p><strong>Spawn phase:</strong> Attributes are rolled (1&ndash;10), then traits are selected from weighted pools. Attribute values influence selection weights through <code>weight_influence</code> relationships. Variables initialize with configured starting values.</p>
+                <p><strong>Runtime phase:</strong> Variables tick over time at configurable rates. When thresholds are crossed, modifiers auto-apply. When multiple conditions are met simultaneously, compound states emerge. Derived values recalculate from current state on every tick.</p>
+            </div>
+
+            <h3 style="font-family: 'Cinzel', serif; color: var(--parchment); font-size: 0.95rem; margin: 1.5rem 0 0.75rem;">Relationship Types</h3>
+
+            <div class="rel-grid">
+                <div class="rel-card">
+                    <h5>weight_influence</h5>
+                    <p>Changes trait selection probability. Per-point scaling from a source attribute.</p>
+                </div>
+                <div class="rel-card">
+                    <h5>rate_modifier</h5>
+                    <p>Adjusts how fast a variable ticks. Multiply or add to the base rate when the source is active.</p>
+                </div>
+                <div class="rel-card">
+                    <h5>value_modifier</h5>
+                    <p>Directly adjusts a derived or variable value. Applies when the source node is active.</p>
+                </div>
+                <div class="rel-card">
+                    <h5>eligibility_gate</h5>
+                    <p>Controls whether a trait can be selected. Source must meet conditions for target to be eligible.</p>
+                </div>
+            </div>
+
+            <div class="content">
+                <h3>Selection Modes</h3>
+                <p>Traits within a layer are selected using one of four modes:</p>
+                <ul>
+                    <li><strong>Weighted</strong> &mdash; Random selection based on calculated weights (base weight + relationship influences)</li>
+                    <li><strong>Threshold</strong> &mdash; Auto-activates when a variable crosses a configured value</li>
+                    <li><strong>All Matching</strong> &mdash; Every eligible trait activates</li>
+                    <li><strong>First Match</strong> &mdash; First eligible trait wins</li>
+                </ul>
+
+                <h3>Compound States</h3>
+                <p>Compounds are emergent &mdash; they activate automatically when all (or any) requirements are met. Requirements can reference active traits, active modifiers, or variable thresholds. The engine checks compounds after every state change; no manual triggering is needed.</p>
+
+                <h3>Event System</h3>
+                <p>State changes emit events for game integration: <code>entitySpawned</code>, <code>variableChanged</code>, <code>modifierApplied</code>, <code>modifierRemoved</code>, <code>compoundActivated</code>, <code>compoundDeactivated</code>, <code>traitActivated</code>, <code>traitDeactivated</code>, and <code>tick</code>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Design Decisions -->
+    <section id="decisions" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Design Decisions</h2>
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>Conditions on Items, Not State Transitions</h4>
+                    <p>Traditional FSMs define explicit transitions between states (A &rarr; B when X). This creates an N&times;N explosion as states grow. Spawn & States instead puts conditions on individual items &mdash; each modifier defines when it should apply and when it should be removed. Multiple modifiers can be active simultaneously without defining every possible combination.</p>
+                </div>
+
+                <div class="card">
+                    <h4>Polling Tick + Event Notifications</h4>
+                    <p>The tick system is a polling loop: every tick, variables advance and thresholds are checked. This enables continuous change (hunger increasing at 2/sec) that pure events can't drive. Events are fire-and-forget notifications for external subscribers &mdash; the engine's internal state is always driven by the tick, not by event handlers.</p>
+                </div>
+
+                <div class="card">
+                    <h4>JSON Config, Not Code</h4>
+                    <p>All entity behavior is defined in a JSON configuration &mdash; no scripting required. This makes configs portable (JS engine and Godot plugin share the same schema), versionable, and editable by non-programmers through the visual editor. Trade-off: some behaviors that would be trivial in code require creative use of relationships and conditions.</p>
+                </div>
+
+                <div class="card">
+                    <h4>Separated Spawn &amp; State Managers</h4>
+                    <p>SpawnManager handles generation logic (config parsing, trait selection, weight calculation). EntityManager handles runtime state (ticking, modifier lifecycle, events). This separation means you can use SpawnManager alone for one-shot generation, or EntityManager alone for runtime state management with externally-created entities.</p>
+                </div>
+
+                <div class="card">
+                    <h4>Explicit Compounds Over Implicit Detection</h4>
+                    <p>Compound states are explicitly defined with named requirements, not inferred from state combinations. This makes them discoverable in the editor, testable in isolation, and self-documenting. A compound named "Hangry" with requirements [Starving + Grumpy] is clearer than an implicit rule buried in game logic.</p>
+                </div>
+
+                <div class="card">
+                    <h4>L-to-R Formula Evaluation</h4>
+                    <p>The formula builder evaluates strictly left-to-right with block grouping, not standard mathematical precedence. This prevents order-of-operations confusion for non-programmers configuring derived values. Each block is a self-contained unit; blocks chain with explicit operators. Trade-off: complex precedence requires nesting blocks.</p>
+                </div>
+
+                <div class="card">
+                    <h4>Flat Config, Modular Later</h4>
+                    <p>The current config is a single JSON file with flat node/relationship arrays. This keeps the system simple for small-to-medium configs (up to ~50 nodes). A modular composition system (namespaced IDs, merge API, module manifests) is planned but deferred until single-file authoring hits a real wall. The cascade architecture is inherently composition-friendly.</p>
+                </div>
+
+                <div class="card">
+                    <h4>Thresholds Over Manual Triggers</h4>
+                    <p>Modifiers auto-apply when variable thresholds are crossed, rather than requiring game code to manually toggle them. This keeps behavior emergent and data-driven. The engine evaluates thresholds on every tick, so modifiers activate and deactivate naturally as variables change. Static modifiers persist until explicit removal conditions are met.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance & Optimization -->
+    <section id="performance" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Performance</h2>
+            </div>
+
+            <div class="content">
+                <p>The engine's hot path runs on every tick for every active entity. Understanding and optimizing this path is critical for configs with many entities or complex modifier networks.</p>
+
+                <h3>Per-Tick Call Chain</h3>
+                <p>Each <code>tick()</code> call executes this sequence per entity:</p>
+                <ol>
+                    <li>Update timed variables (advance by rate &times; deltaSeconds)</li>
+                    <li>Check trait thresholds for each changed variable</li>
+                    <li>Expire timed/tick-counted modifiers</li>
+                    <li>Check all threshold modifier conditions, apply/remove as needed</li>
+                    <li>Recalculate derived values from current state</li>
+                    <li>Decrement action cooldowns</li>
+                </ol>
+                <p>Steps 2&ndash;4 can trigger <strong>cascade recalculations</strong> (rate recalc + compound check + derived recalc) when modifiers or traits change state.</p>
+            </div>
+
+            <h3 style="font-family: 'Cinzel', serif; color: var(--parchment); font-size: 0.95rem; margin: 1.5rem 0 0.75rem;">Optimizations</h3>
+
+            <!-- Opt 1: Node Type Indexing -->
+            <div class="perf-card">
+                <h4>Node Type Indexing</h4>
+                <p>Node queries like <code>getCompounds()</code>, <code>getDerived()</code>, and <code>getVariables()</code> are called multiple times per tick. Previously each call scanned the entire node array with <code>.filter()</code>. Now, nodes are pre-grouped by type during config load into an O(1) Map lookup.</p>
+                <div class="perf-before-after">
+                    <div>
+                        <div class="perf-label before">Before</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// O(n) scan on every call</span>
+<span class="c-keyword">return</span> <span class="c-keyword">this</span>.config.nodes
+  .<span class="c-method">filter</span>(n => n.type === type);</pre>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="perf-label after">After</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// O(1) Map lookup</span>
+<span class="c-keyword">return</span> <span class="c-keyword">this</span>._nodesByType
+  .<span class="c-method">get</span>(type) || [];</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opt 2: Formula Compilation Cache -->
+            <div class="perf-card">
+                <h4>Formula Compilation Cache</h4>
+                <p>Derived value formulas are evaluated via <code>new Function()</code>, which invokes the JavaScript parser/compiler on every call. Since formulas are config-static (they never change at runtime), the compiled function is now cached on first use and reused for subsequent evaluations.</p>
+                <div class="perf-before-after">
+                    <div>
+                        <div class="perf-label before">Before</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// Compiles on every tick</span>
+<span class="c-keyword">const</span> fn = <span class="c-keyword">new</span> <span class="c-type">Function</span>(
+  ...keys, <span class="c-string">`return ${formula}`</span>
+);</pre>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="perf-label after">After</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// Compile once, cache by formula</span>
+<span class="c-keyword">let</span> cached = <span class="c-keyword">this</span>._formulaCache
+  .<span class="c-method">get</span>(formula);
+<span class="c-keyword">if</span> (!cached) { <span class="c-comment">/* compile & store */</span> }</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opt 3: Threshold Pre-indexing -->
+            <div class="perf-card">
+                <h4>Threshold Pre-Indexing</h4>
+                <p>Threshold checks (both modifier thresholds and trait thresholds) previously scanned all nodes on every tick to find the relevant subset. Now, threshold modifiers and threshold traits are pre-filtered and indexed by target variable during config load. Exclusive modifier groups are also pre-computed.</p>
+                <div class="perf-before-after">
+                    <div>
+                        <div class="perf-label before">Before</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// Full scan every tick</span>
+config.nodes.<span class="c-method">filter</span>(n =>
+  n.type === <span class="c-string">'modifier'</span> &&
+  n.config.trigger?.type
+    === <span class="c-string">'threshold'</span>
+);</pre>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="perf-label after">After</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// Pre-computed at config load</span>
+<span class="c-keyword">this</span>._thresholdModifiers;
+<span class="c-comment">// Indexed by variable</span>
+<span class="c-keyword">this</span>._thresholdTraitsByVar
+  .<span class="c-method">get</span>(varId);</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opt 4: Cascade Batching -->
+            <div class="perf-card">
+                <h4>Cascade Batching</h4>
+                <p>When threshold checking toggles multiple modifiers in a single pass, each toggle previously triggered an independent cascade recalculation (rates + compounds + derived). Now, cascades are batched &mdash; deferred during the threshold loop and flushed once at the end. If 3 modifiers change simultaneously, that's 1 cascade instead of 3.</p>
+                <div class="perf-before-after">
+                    <div>
+                        <div class="perf-label before">Before</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// Each toggle fires cascade</span>
+<span class="c-method">applyModifier</span>()  <span class="c-comment">// cascade</span>
+<span class="c-method">removeModifier</span>() <span class="c-comment">// cascade</span>
+<span class="c-method">applyModifier</span>()  <span class="c-comment">// cascade</span></pre>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="perf-label after">After</div>
+                        <div class="code-block">
+                            <pre><span class="c-comment">// Batch during threshold loop</span>
+_batchingCascade = <span class="c-keyword">true</span>;
+<span class="c-comment">// ...apply/remove modifiers...</span>
+_batchingCascade = <span class="c-keyword">false</span>;
+<span class="c-method">_runCascade</span>(entity); <span class="c-comment">// once</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <h3>Scaling Characteristics</h3>
+                <p>With these optimizations, per-tick cost scales as <strong>O(relationships)</strong> per entity, not O(nodes&sup2;). The relationship index system uses Map lookups (O(1) per source/target), so adding more nodes of types that don't interact with a given entity adds negligible overhead. The main scaling factors are:</p>
+                <ul>
+                    <li><strong>Number of timed variables</strong> &mdash; each ticked variable triggers a threshold check</li>
+                    <li><strong>Number of threshold modifiers</strong> &mdash; checked once per tick (now from pre-computed list)</li>
+                    <li><strong>Number of derived values</strong> &mdash; each recalculated per tick (now with cached compilation)</li>
+                    <li><strong>Cascade depth</strong> &mdash; modifier changes trigger rate/compound/derived recalc (now batched)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scalability & Future -->
+    <section id="scalability" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Scalability &amp; Future</h2>
+            </div>
+
+            <div class="content">
+                <h3>Modularization Path</h3>
+                <p>The current config is a single JSON file. For large projects with 100+ nodes, a composition system would allow building configs from reusable modules. The planned approach:</p>
+                <ul>
+                    <li><strong>Namespaced IDs</strong> &mdash; <code>combat:attr_strength</code> vs <code>social:attr_patience</code> to prevent collisions when merging modules</li>
+                    <li><strong>Module manifests</strong> &mdash; each module declares its exports (nodes others can reference) and imports (external dependencies)</li>
+                    <li><strong>mergeConfig()</strong> &mdash; a composition function that combines a base config with modules, handling ID remapping and reference resolution</li>
+                    <li><strong>Atomic layer+trait units</strong> &mdash; layers and their traits treated as one extractable unit (since they have bidirectional references)</li>
+                </ul>
+                <p>The cascade architecture is inherently composition-friendly &mdash; nodes define their own conditions rather than referencing other nodes by position. The main barriers are flat ID namespacing and the layer/trait bidirectional coupling, both addressable without changing the runtime evaluation model.</p>
+
+                <h3>Entity Pool Scaling</h3>
+                <p>The engine includes a multi-pool system for managing entity lifecycles. Pools pre-allocate entities and recycle them via acquire/release, avoiding repeated spawn/despawn overhead. Each pool can have independent size limits, pre-warming counts, and auto-replenishment settings.</p>
+
+                <h3>Comparison: FSMs vs Behavior Trees vs Cascade</h3>
+                <p>Traditional FSMs suffer from state explosion (N states &times; N transitions). Hierarchical FSMs (HFSMs) reduce this through nesting but remain brittle to change. Behavior trees gain modularity through composable, independent sub-trees.</p>
+                <p>The Spawn & States cascade model is closest to behavior trees in philosophy &mdash; each node evaluates independently based on current state, and multiple effects can be active simultaneously. The key difference is that cascade nodes don't execute actions; they define state. The cascade answers "what is this entity right now?" rather than "what should this entity do next?"</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Quick Reference -->
+    <section id="api" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>API Reference</h2>
+            </div>
+
+            <div class="content">
+                <h3>Core Methods</h3>
+            </div>
+
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Description</th>
+                        <th>Returns</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>new SpawnEngine(config?)</code></td>
+                        <td>Create engine instance, optionally with config</td>
+                        <td>SpawnEngine</td>
+                    </tr>
+                    <tr>
+                        <td><code>loadConfig(config)</code></td>
+                        <td>Load a JSON configuration. Rebuilds all indexes</td>
+                        <td>this (chainable)</td>
+                    </tr>
+                    <tr>
+                        <td><code>spawn(overrides?)</code></td>
+                        <td>Generate a new entity with random attributes and traits</td>
+                        <td>Entity object</td>
+                    </tr>
+                    <tr>
+                        <td><code>despawn(entityId)</code></td>
+                        <td>Remove an entity</td>
+                        <td>boolean</td>
+                    </tr>
+                    <tr>
+                        <td><code>getEntity(entityId)</code></td>
+                        <td>Retrieve an entity by ID</td>
+                        <td>Entity or null</td>
+                    </tr>
+                    <tr>
+                        <td><code>tick(entityOrId, delta?)</code></td>
+                        <td>Advance time for one entity. Updates variables, checks thresholds</td>
+                        <td>Entity or null</td>
+                    </tr>
+                    <tr>
+                        <td><code>tickAll(delta?)</code></td>
+                        <td>Tick all active entities</td>
+                        <td>void</td>
+                    </tr>
+                    <tr>
+                        <td><code>startAutoTick()</code></td>
+                        <td>Begin automatic ticking at configured rate</td>
+                        <td>void</td>
+                    </tr>
+                    <tr>
+                        <td><code>stopAutoTick()</code></td>
+                        <td>Stop automatic ticking</td>
+                        <td>void</td>
+                    </tr>
+                    <tr>
+                        <td><code>modifyVariable(entityId, varId, amount)</code></td>
+                        <td>Add/subtract from a variable value</td>
+                        <td>boolean</td>
+                    </tr>
+                    <tr>
+                        <td><code>setVariable(entityId, varId, value)</code></td>
+                        <td>Set a variable to an exact value</td>
+                        <td>boolean</td>
+                    </tr>
+                    <tr>
+                        <td><code>applyModifier(entityId, modId, config?)</code></td>
+                        <td>Apply a modifier to an entity</td>
+                        <td>boolean</td>
+                    </tr>
+                    <tr>
+                        <td><code>removeModifier(entityId, modId)</code></td>
+                        <td>Remove a modifier from an entity</td>
+                        <td>boolean</td>
+                    </tr>
+                    <tr>
+                        <td><code>on(event, callback)</code></td>
+                        <td>Subscribe to an engine event</td>
+                        <td>void</td>
+                    </tr>
+                    <tr>
+                        <td><code>off(event, callback)</code></td>
+                        <td>Unsubscribe from an event</td>
+                        <td>void</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content">
+                <h3>Events</h3>
+            </div>
+
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Payload</th>
+                        <th>Fired When</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="event-name">entitySpawned</span></td>
+                        <td>{ entityId, entity }</td>
+                        <td>New entity generated</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">variableChanged</span></td>
+                        <td>{ entityId, varId, oldValue, newValue }</td>
+                        <td>Variable value changes during tick</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">modifierApplied</span></td>
+                        <td>{ entityId, modifierId }</td>
+                        <td>Modifier activated (threshold or manual)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">modifierRemoved</span></td>
+                        <td>{ entityId, modifierId }</td>
+                        <td>Modifier expired or removed</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">compoundActivated</span></td>
+                        <td>{ entityId, compoundId }</td>
+                        <td>All compound requirements met</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">compoundDeactivated</span></td>
+                        <td>{ entityId, compoundId }</td>
+                        <td>Compound requirements no longer met</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">traitActivated</span></td>
+                        <td>{ entityId, traitId }</td>
+                        <td>Trait activated (threshold or manual)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">traitDeactivated</span></td>
+                        <td>{ entityId, traitId }</td>
+                        <td>Trait deactivated</td>
+                    </tr>
+                    <tr>
+                        <td><span class="event-name">tick</span></td>
+                        <td>{ entityId, deltaSeconds }</td>
+                        <td>After each entity tick completes</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content">
+                <h3>Entity Structure</h3>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">entity object</div>
+                <pre>{
+  <span class="c-string">id</span>:         <span class="c-comment">// unique entity ID</span>
+  <span class="c-string">name</span>:       <span class="c-comment">// generated or preset name</span>
+  <span class="c-string">attributes</span>: { <span class="c-comment">attr_strength: 7, attr_patience: 4, ...</span> }
+  <span class="c-string">layers</span>:     { <span class="c-comment">layer_personality: { active: ['item_warrior', ...] }</span> }
+  <span class="c-string">variables</span>:  { <span class="c-comment">var_hunger: { value: 50, min: 0, max: 100, currentRate: -2.5, ... }</span> }
+  <span class="c-string">modifiers</span>:  [ <span class="c-comment">'mod_hungry', 'mod_bored', ...</span> ]
+  <span class="c-string">compounds</span>:  [ <span class="c-comment">'comp_hangry', ...</span> ]
+  <span class="c-string">derived</span>:    { <span class="c-comment">derived_tip_multiplier: 1.4, ...</span> }
+  <span class="c-string">contexts</span>:   { <span class="c-comment">ctx_location: 'tavern', ...</span> }
+  <span class="c-string">actions</span>:    { <span class="c-comment">act_attack: { cooldownRemaining: 0 }, ...</span> }
+}</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- See It In Action -->
+    <section class="section" style="text-align: center;">
+        <div class="container">
+            <div class="section-header">
+                <h2>See It In Action</h2>
+            </div>
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem;">Interactive demos showing the engine's cascade, formula system, and conditional logic.</p>
+            <div class="toc">
+                <a href="../../../demos/entity-spawner/index.html">Entity Spawner</a>
+                <a href="../../../demos/formula-builder/index.html">Formula Builder</a>
+                <a href="../../../demos/conditional-logic/index.html">Conditional Logic</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Back to Project -->
+    <section class="back-section">
+        <a href="../index.html" class="back-link">&larr; Back to Project</a>
+    </section>
+</body>
+</html>

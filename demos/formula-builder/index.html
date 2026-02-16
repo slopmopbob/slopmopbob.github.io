@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Builder - Spawn & States Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --shadow: #1a1512;
+            --panel: #252019;
+            --panel-light: #302922;
+            --ink: #3d342c;
+            --ink-light: #4a3f36;
+            --ink-fade: #7a6e63;
+            --parchment: #e8e0d4;
+            --parchment-dim: #c4bab0;
+            --lavender: #a78db6;
+            --lavender-glow: #c4a8d0;
+            --lavender-dim: #8a7396;
+            --sage: #9cb68d;
+            --sage-glow: #b5cca8;
+            --node-attr: #4a7c59;
+            --node-derived: #4a7c8b;
+            --warning: #c9a86c;
+            --danger: #b58a8a;
+            --id-color: #c4a0e8;
+            --num-color: #7bc4a0;
+        }
+
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--shadow);
+            color: var(--parchment);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--shadow); }
+        ::-webkit-scrollbar-thumb { background: var(--ink-light); border-radius: 3px; }
+
+        /* Header */
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 2rem;
+            background: var(--panel);
+            border-bottom: 1px solid var(--ink-light);
+        }
+
+        .demo-header a {
+            color: var(--parchment-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .demo-header a:hover { color: var(--lavender); }
+
+        .demo-brand {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: var(--lavender);
+            letter-spacing: 0.08em;
+        }
+
+        /* Layout */
+        .demo-layout {
+            max-width: 1060px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .demo-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: var(--lavender);
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-subtitle {
+            color: var(--parchment-dim);
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-context {
+            color: var(--ink-fade);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1.75rem;
+            max-width: 750px;
+        }
+
+        .demo-context strong { color: var(--lavender); font-weight: 500; }
+        .demo-context em { color: var(--parchment-dim); font-style: italic; }
+
+        /* Two column */
+        .demo-columns {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Presets */
+        .presets {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .presets-label {
+            font-size: 0.8rem;
+            color: var(--ink-fade);
+            margin-right: 0.25rem;
+        }
+
+        .preset-btn {
+            padding: 0.3rem 0.7rem;
+            background: var(--panel-light);
+            color: var(--parchment-dim);
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover { border-color: var(--lavender-dim); color: var(--lavender); }
+        .preset-btn.active { border-color: var(--lavender); color: var(--lavender); background: rgba(167, 141, 182, 0.1); }
+
+        /* Formula workspace */
+        .workspace {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+
+        .workspace-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            color: var(--lavender);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Formula preview — bracket-grouped block display */
+        .formula-preview {
+            background: var(--shadow);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .fp-bracket { color: var(--lavender-dim); font-weight: 600; font-size: 1em; }
+        .fp-value { padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; white-space: nowrap; }
+        .fp-value.id { color: var(--id-color); }
+        .fp-value.num { color: var(--num-color); }
+        .fp-op { color: var(--warning); font-weight: 500; font-size: 1.15em; padding: 0 0.1rem; }
+        .fp-equals { color: var(--ink-fade); margin-left: 0.5rem; }
+        .fp-result { color: var(--lavender-glow); font-weight: 600; font-size: 1.1em; }
+        .fp-empty { color: var(--ink-fade); font-style: italic; font-family: 'Crimson Pro', serif; }
+        .fp-compound { white-space: nowrap; }
+
+        /* Block area — chip container */
+        .block-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            min-height: 50px;
+            margin-bottom: 1.25rem;
+            padding: 0.6rem;
+            background: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .block-area.drag-active {
+            border: 2px dashed var(--lavender);
+            background: rgba(167, 141, 182, 0.04);
+        }
+
+        .block-area:empty::before,
+        .block-area-empty {
+            color: var(--ink-fade);
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+
+        /* Step chip */
+        .step-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            border: 1px solid rgba(155, 123, 196, 0.35);
+            background: rgba(155, 123, 196, 0.08);
+            cursor: grab;
+            position: relative;
+            user-select: none;
+            transition: border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+        }
+
+        .step-chip:hover { border-color: rgba(155, 123, 196, 0.55); }
+
+        .step-chip.selected {
+            border-color: var(--lavender);
+            box-shadow: 0 0 8px rgba(167, 141, 182, 0.35);
+        }
+
+        .step-chip.dragging { opacity: 0.4; }
+
+        .step-chip.drop-target {
+            box-shadow: 0 0 6px rgba(167, 141, 182, 0.3);
+            border-color: rgba(167, 141, 182, 0.5);
+        }
+
+        .step-chip.combine-target {
+            box-shadow: 0 0 12px rgba(155, 123, 196, 0.5);
+            border-color: rgba(155, 123, 196, 0.7);
+            background: rgba(155, 123, 196, 0.15);
+        }
+
+        .block-area.has-selection .step-chip:not(.selected) { opacity: 0.55; }
+
+        .step-chip .chip-value {
+            padding: 0.3rem 0.45rem;
+            border-radius: 3px;
+        }
+
+        .step-chip .chip-value.id { color: var(--id-color); font-weight: 500; }
+        .step-chip .chip-value.num { color: var(--num-color); font-weight: 600; }
+
+        .step-chip .chip-op {
+            color: var(--warning);
+            font-weight: 500;
+            font-size: 1.2rem;
+            padding: 0.25rem 0.3rem;
+            cursor: pointer;
+            opacity: 0.85;
+            transition: opacity 0.15s;
+        }
+
+        .step-chip .chip-op:hover { opacity: 1; }
+
+        .step-chip .chip-label {
+            position: absolute;
+            top: -10px;
+            left: 6px;
+            font-size: 0.55rem;
+            color: var(--ink-fade);
+            font-style: italic;
+            pointer-events: none;
+        }
+
+        /* Delete button on chip */
+        .step-chip .chip-delete {
+            position: absolute;
+            top: -8px;
+            right: -7px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            border: 1px solid rgba(181, 138, 138, 0.4);
+            background: var(--panel);
+            color: rgba(181, 138, 138, 0.8);
+            font-size: 0.6rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .step-chip:hover .chip-delete { display: flex; }
+        .step-chip .chip-delete:hover { background: rgba(181, 138, 138, 0.2); color: #d4a0a0; }
+
+        /* Split button on compound chip */
+        .step-chip .chip-split {
+            position: absolute;
+            top: -8px;
+            right: 12px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            border: 1px solid rgba(201, 168, 108, 0.4);
+            background: var(--panel);
+            color: rgba(201, 168, 108, 0.8);
+            font-size: 0.6rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .step-chip.compound:hover .chip-split { display: flex; }
+
+        /* Inter-step operators */
+        .inter-op {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 0.4rem;
+            color: var(--warning);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.85;
+            transition: opacity 0.15s;
+            user-select: none;
+        }
+
+        .inter-op:hover { opacity: 1; color: var(--lavender-glow); }
+
+        /* Drag indicator */
+        .drag-indicator {
+            width: 2px;
+            height: 24px;
+            background: var(--lavender);
+            border-radius: 1px;
+            box-shadow: 0 0 6px rgba(167, 141, 182, 0.5);
+        }
+
+        /* Builder panel */
+        .builder {
+            background: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 0.75rem;
+        }
+
+        .builder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .builder-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--lavender);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .builder-row {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .builder-row label {
+            font-size: 0.75rem;
+            color: var(--parchment-dim);
+            min-width: 38px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .builder-row select, .builder-row input[type="text"] {
+            background: var(--panel);
+            color: var(--parchment);
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            padding: 0.3rem 0.45rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .builder-row select:focus, .builder-row input:focus {
+            border-color: var(--lavender-dim);
+        }
+
+        .builder-row select { flex: 1; min-width: 0; }
+        .builder-row input[type="text"] { width: 70px; text-align: center; }
+
+        .type-toggle {
+            padding: 0.2rem 0.5rem;
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            background: var(--panel);
+            color: var(--parchment-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .type-toggle:hover { border-color: var(--lavender-dim); }
+        .type-toggle.id-mode { color: var(--id-color); border-color: rgba(196, 160, 232, 0.3); }
+        .type-toggle.num-mode { color: var(--num-color); border-color: rgba(123, 196, 160, 0.3); }
+
+        /* Op buttons */
+        .op-buttons {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .op-btn {
+            width: 30px;
+            height: 28px;
+            border: 1px solid var(--ink-light);
+            background: rgba(0, 0, 0, 0.15);
+            color: var(--ink-fade);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .op-btn:hover { border-color: var(--lavender-dim); color: var(--parchment-dim); }
+
+        .op-btn.active {
+            color: var(--warning);
+            border-color: var(--warning);
+            background: rgba(201, 168, 108, 0.12);
+        }
+
+        .builder-right.disabled {
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        /* Label row */
+        .label-row { display: none; }
+        .label-row.visible { display: flex; }
+        .label-row input { flex: 1; }
+
+        /* Builder actions */
+        .builder-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary {
+            padding: 0.35rem 0.8rem;
+            background: var(--lavender);
+            color: var(--shadow);
+            border: none;
+            border-radius: 3px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover { background: var(--lavender-glow); }
+        .btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+        .btn-secondary {
+            padding: 0.35rem 0.8rem;
+            background: transparent;
+            color: var(--ink-fade);
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover { border-color: var(--lavender-dim); color: var(--parchment-dim); }
+
+        .btn-danger {
+            padding: 0.35rem 0.8rem;
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid rgba(181, 138, 138, 0.3);
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover { background: rgba(181, 138, 138, 0.1); }
+
+        .actions-spacer { flex: 1; }
+
+        /* Output string */
+        .output-section {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--ink-light);
+        }
+
+        .output-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.6rem;
+            color: var(--ink-fade);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .output-string {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--parchment-dim);
+            background: var(--shadow);
+            padding: 0.5rem 0.75rem;
+            border-radius: 3px;
+            border: 1px solid var(--ink-light);
+            word-break: break-all;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .var-panel {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1rem;
+        }
+
+        .var-panel-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--sage);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        .var-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .var-name {
+            font-size: 0.85rem;
+            color: var(--id-color);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .var-input {
+            width: 60px;
+            text-align: center;
+            background: var(--panel-light);
+            color: var(--parchment);
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            padding: 0.25rem 0.4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .var-input:focus { border-color: var(--lavender-dim); }
+
+        /* Context panel */
+        .context-panel {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1rem;
+        }
+
+        .context-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--lavender);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        .context-text {
+            font-size: 0.88rem;
+            color: var(--parchment-dim);
+            line-height: 1.7;
+        }
+
+        .context-text strong { color: var(--lavender); }
+        .context-text .hl-id { color: var(--id-color); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+        .context-text .hl-num { color: var(--num-color); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+        .context-text .hl-op { color: var(--warning); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+
+
+        /* Full-width context below */
+        .bottom-context {
+            margin-top: 2rem;
+        }
+
+        .bottom-context .context-panel {
+            padding: 1.25rem;
+        }
+
+        .cascade-mini {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .cascade-mini span { padding: 0.2rem 0.5rem; border-radius: 3px; }
+        .cascade-mini .c-attr { background: rgba(74,124,89,0.25); color: var(--sage-glow); }
+        .cascade-mini .c-var { background: rgba(201,168,108,0.2); color: #e0c890; }
+        .cascade-mini .c-mod { background: rgba(166,93,122,0.25); color: #d4a0b8; }
+        .cascade-mini .c-derived { background: rgba(74,124,139,0.25); color: #90c8d4; }
+        .cascade-mini .c-arrow { color: var(--ink-fade); }
+        .cascade-mini .c-highlight { border: 1px solid rgba(74,124,139,0.5); box-shadow: 0 0 6px rgba(74,124,139,0.2); }
+
+        @media (max-width: 768px) {
+            .demo-columns { grid-template-columns: 1fr; }
+            .demo-layout { padding: 1rem; }
+        }
+
+        /* Embed mode */
+        body.embed-mode .demo-header,
+        body.embed-mode [data-embed-hide] { display: none !important; }
+        body.embed-mode .demo-layout { padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <script>if(location.search.includes('embed=1'))document.body.classList.add('embed-mode');</script>
+    <div class="demo-header">
+        <a href="../../projects/hierarchical-state-engine/index.html" class="demo-brand">Spawn &amp; States</a>
+        <a href="../../index.html#demos">&larr; Back</a>
+    </div>
+
+    <div class="demo-layout">
+        <h1 class="demo-title">Formula Builder</h1>
+        <p class="demo-subtitle">Derived Value Configuration &mdash; Block-Based, Left-to-Right Evaluation</p>
+
+        <!-- Description + Technical Context (2-col) -->
+        <div data-embed-hide style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <div style="color: var(--parchment-dim); font-size: 0.95rem; line-height: 1.7;">
+                <p style="font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--lavender); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem;">What This Does</p>
+                <p>
+                    <strong style="color: var(--lavender);">Spawn &amp; States</strong> supports
+                    <strong style="color: var(--lavender);">derived values</strong> &mdash; computed stats like
+                    damage output, max health, or movement speed that are defined as data, not code. Instead of
+                    hard-coding <em>"damage = strength * 2 - defense"</em>, you assemble that formula visually
+                    with drag-and-drop blocks.
+                </p>
+                <p style="margin-top: 0.6rem;">
+                    Each block holds a single value (an attribute reference or a number) or a pair
+                    (<span class="hl-id">Strength</span> <span class="hl-op">&times;</span> <span class="hl-num">2</span>).
+                    Blocks chain together with operators and evaluate strictly left-to-right &mdash;
+                    what you see is what you get.
+                </p>
+            </div>
+            <div style="color: var(--parchment-dim); font-size: 0.95rem; line-height: 1.7;">
+                <p style="font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--lavender); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem;">Why It Matters</p>
+                <p>
+                    Normally, stat formulas live buried in code. Change one, recompile, test, repeat.
+                    In Spawn &amp; States, formulas are <strong style="color: var(--lavender);">part of the config</strong>
+                    alongside attributes, traits, and modifiers &mdash; designers can tweak how damage scales
+                    without touching a line of code.
+                </p>
+                <p style="margin-top: 0.6rem;">
+                    At runtime, Spawn &amp; States recalculates these formulas every tick against live entity state.
+                    An entity's Strength changes? Its damage updates. Gets a Defense debuff? The formula
+                    catches it automatically &mdash; no manual recalculation, no code changes.
+                </p>
+            </div>
+        </div>
+
+        <!-- How to use (instructions above demo) -->
+        <div class="context-panel" style="margin-bottom: 2rem;">
+            <div class="context-title">How To Use</div>
+            <div class="context-text" style="font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <strong>Build blocks</strong> using the panel below the chip area.
+                    Pick a variable or type a number for <strong>Left</strong>, optionally
+                    click an <code>Op</code> button and set a <strong>Right</strong> value
+                    to make a compound block, then <strong>Add Block</strong>.
+                </div>
+                <div>
+                    <strong>Drag chips</strong> to reorder them.
+                    <strong>Drag onto a single-value chip</strong> to combine two blocks
+                    into a compound. Click <strong>&harr;</strong> on a compound chip to split
+                    it. Click the <strong>operator between chips</strong> to cycle +&minus;&times;&divide;.
+                </div>
+                <div>
+                    <strong>Edit attribute values</strong> in the sidebar to see the formula
+                    result update live. Click any <strong>chip</strong> to select and edit it
+                    in the builder panel. Try the <strong>presets</strong> to see how different
+                    game formulas are composed.
+                </div>
+            </div>
+        </div>
+
+        <!-- Where This Fits (above demo) -->
+        <div data-embed-hide class="context-panel" style="margin-bottom: 2rem;">
+            <div class="context-title">Where This Fits</div>
+            <div class="context-text" style="font-size: 0.85rem;">
+                <p>
+                    Derived values sit at the end of the Spawn &amp; States cascade.
+                    <strong>Attributes</strong> are rolled at spawn time, feeding into <strong>trait</strong>
+                    selection and <strong>variable</strong> rates. As variables change and
+                    <strong>modifiers</strong> activate, the entity's live state shifts &mdash; and derived
+                    value formulas like this one recalculate against that state every tick.
+                    Because formulas live in the config alongside everything else, you can change how damage
+                    scales without touching code.
+                </p>
+                <div class="cascade-mini">
+                    <span class="c-attr">Attributes</span>
+                    <span class="c-arrow">&rarr;</span>
+                    <span class="c-var">Variables</span>
+                    <span class="c-arrow">&rarr;</span>
+                    <span class="c-mod">Modifiers</span>
+                    <span class="c-arrow">&rarr;</span>
+                    <span class="c-derived c-highlight">Derived Values</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo section -->
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <span style="font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--lavender); letter-spacing: 0.12em; text-transform: uppercase;">Interactive Demo</span>
+            <span style="flex: 1; height: 1px; background: var(--ink-light);"></span>
+            <a href="javascript:void(0)" onclick="window.open(location.pathname+'?embed=1', '_blank')" style="font-size: 0.75rem; color: var(--parchment-dim); text-decoration: none; border: 1px solid var(--ink-light); padding: 0.2rem 0.6rem; border-radius: 3px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--lavender-dim)'; this.style.color='var(--lavender)'" onmouseout="this.style.borderColor='var(--ink-light)'; this.style.color='var(--parchment-dim)'">Open in new tab &nearr;</a>
+        </div>
+
+        <div class="presets">
+            <span class="presets-label">Presets:</span>
+            <button class="preset-btn" id="preset-damage" onclick="loadPreset('damage')">Damage Calc</button>
+            <button class="preset-btn" id="preset-health" onclick="loadPreset('health')">Max Health</button>
+            <button class="preset-btn" id="preset-speed" onclick="loadPreset('speed')">Movement Speed</button>
+            <button class="preset-btn" id="preset-clear" onclick="clearAll()">Clear</button>
+        </div>
+
+        <div class="demo-columns">
+            <div class="workspace">
+                <div class="workspace-label">Blocks <span style="font-size: 0.55rem; color: var(--ink-fade); text-transform: none; letter-spacing: 0; font-family: 'Crimson Pro', serif;">&mdash; drag to reorder, drag onto a single block to combine</span></div>
+                <div class="block-area" id="blockArea"></div>
+
+                <div class="builder" id="builderPanel">
+                    <div class="builder-header">
+                        <div class="builder-title" id="builderTitle">New Block</div>
+                    </div>
+
+                    <div class="builder-row">
+                        <label>Left</label>
+                        <button class="type-toggle id-mode" id="leftToggle" onclick="toggleLeftType()">Var</button>
+                        <select id="leftSelect" style="flex:1;"></select>
+                        <input type="text" id="leftNum" value="1" style="display:none;">
+                    </div>
+
+                    <div class="builder-row">
+                        <label>Op</label>
+                        <div class="op-buttons">
+                            <button class="op-btn" data-op="+" onclick="selectOp('+')">+</button>
+                            <button class="op-btn" data-op="-" onclick="selectOp('-')">&minus;</button>
+                            <button class="op-btn" data-op="*" onclick="selectOp('*')">&times;</button>
+                            <button class="op-btn" data-op="/" onclick="selectOp('/')">&divide;</button>
+                        </div>
+                        <span style="font-size: 0.7rem; color: var(--ink-fade); margin-left: 0.3rem;">click to toggle</span>
+                    </div>
+
+                    <div class="builder-row builder-right disabled" id="rightRow">
+                        <label>Right</label>
+                        <button class="type-toggle num-mode" id="rightToggle" onclick="toggleRightType()">#</button>
+                        <input type="text" id="rightNum" value="2" style="flex:0 0 70px;">
+                        <select id="rightSelect" style="flex:1; display:none;"></select>
+                    </div>
+
+                    <div class="builder-row label-row" id="labelRow">
+                        <label>Label</label>
+                        <input type="text" id="labelInput" placeholder="optional name" style="flex:1;">
+                    </div>
+
+                    <div class="builder-actions" id="builderActions">
+                        <button class="btn-primary" id="btnAdd" onclick="addOrUpdateBlock()">+ Add Block</button>
+                        <span class="actions-spacer"></span>
+                        <button class="btn-secondary" id="btnUndo" onclick="undo()" style="display:none;">Undo</button>
+                        <button class="btn-secondary" id="btnRedo" onclick="redo()" style="display:none;">Redo</button>
+                    </div>
+                </div>
+
+                <div class="output-section">
+                    <div class="output-label">Engine Output</div>
+                    <div class="formula-preview" id="preview" style="margin-bottom: 0;"></div>
+                    <div class="output-string" id="outputString" style="margin-top: 0.5rem;">&mdash;</div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="var-panel">
+                    <div class="var-panel-title">Entity Attributes</div>
+                    <div id="varList"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Post-demo: See Also -->
+        <div data-embed-hide style="margin-top: 2rem;">
+            <div class="context-panel">
+                <div class="context-title">See Also</div>
+                <div class="context-text" style="font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <p>
+                        The <a href="../entity-spawner/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Entity Spawner</a>
+                        runs the full Spawn &amp; States cascade &mdash; generate entities with randomized attributes,
+                        watch traits get selected, variables tick, and modifiers activate.
+                        Formulas like this one would compute their damage, max health, and other derived stats at runtime.
+                    </p>
+                    <p>
+                        The <a href="../conditional-logic/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Conditional Logic Builder</a>
+                        shows how Spawn &amp; States decides <em>when</em> modifiers activate &mdash; the same
+                        attributes and variables this formula reads are the ones those threshold conditions monitor.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== Data Model =====
+        // Matches the engine's FormulaModel exactly:
+        // FormulaValue = { type: 'id'|'num', value: string }
+        // FormulaBlock = { left: FormulaValue, op?: string, right?: FormulaValue, label?: string }
+        // FormulaStep = { type: 'block', block: FormulaBlock }
+        // FormulaModel = { steps: FormulaStep[], ops: string[] }
+        //   ops[i] is the operator between steps[i] and steps[i+1]
+
+        const VARS = {
+            Strength: 8,
+            Defense: 5,
+            Level: 3,
+            Speed: 6,
+            Luck: 4,
+            Vitality: 7,
+            Armor: 3
+        };
+
+        let model = { steps: [], ops: [] };
+        let selectedStep = -1;
+
+        // Builder state
+        let builder = {
+            leftType: 'id',
+            leftValue: Object.keys(VARS)[0],
+            op: null,
+            rightType: 'num',
+            rightValue: '2',
+            label: ''
+        };
+
+        // Undo/redo
+        let undoStack = [];
+        let undoPointer = -1;
+
+        // Drag state
+        let dragData = null;
+
+        // ===== Init =====
+        function init() {
+            populateVarList();
+            populateSelects();
+            loadPreset('damage');
+        }
+
+        function populateVarList() {
+            const el = document.getElementById('varList');
+            el.innerHTML = Object.entries(VARS).map(([name, val]) => `
+                <div class="var-row">
+                    <span class="var-name">${name}</span>
+                    <input type="number" class="var-input" value="${val}"
+                        onchange="VARS['${name}']=Number(this.value); refresh();">
+                </div>
+            `).join('');
+        }
+
+        function populateSelects() {
+            const names = Object.keys(VARS);
+            const opts = names.map(n => `<option value="${n}">${n}</option>`).join('');
+            document.getElementById('leftSelect').innerHTML = opts;
+            document.getElementById('rightSelect').innerHTML = opts;
+        }
+
+        // ===== Builder Controls =====
+        function toggleLeftType() {
+            const btn = document.getElementById('leftToggle');
+            if (builder.leftType === 'id') {
+                builder.leftType = 'num';
+                btn.textContent = '#';
+                btn.className = 'type-toggle num-mode';
+                document.getElementById('leftSelect').style.display = 'none';
+                document.getElementById('leftNum').style.display = '';
+                builder.leftValue = document.getElementById('leftNum').value;
+            } else {
+                builder.leftType = 'id';
+                btn.textContent = 'Var';
+                btn.className = 'type-toggle id-mode';
+                document.getElementById('leftSelect').style.display = '';
+                document.getElementById('leftNum').style.display = 'none';
+                builder.leftValue = document.getElementById('leftSelect').value;
+            }
+            if (selectedStep >= 0) syncBuilderToModel();
+        }
+
+        function toggleRightType() {
+            const btn = document.getElementById('rightToggle');
+            if (builder.rightType === 'num') {
+                builder.rightType = 'id';
+                btn.textContent = 'Var';
+                btn.className = 'type-toggle id-mode';
+                document.getElementById('rightNum').style.display = 'none';
+                document.getElementById('rightSelect').style.display = '';
+                builder.rightValue = document.getElementById('rightSelect').value;
+            } else {
+                builder.rightType = 'num';
+                btn.textContent = '#';
+                btn.className = 'type-toggle num-mode';
+                document.getElementById('rightNum').style.display = '';
+                document.getElementById('rightSelect').style.display = 'none';
+                builder.rightValue = document.getElementById('rightNum').value;
+            }
+            if (selectedStep >= 0) syncBuilderToModel();
+        }
+
+        function selectOp(op) {
+            if (builder.op === op) {
+                builder.op = null;
+                builder.rightValue = '';
+            } else {
+                builder.op = op;
+                // Restore right value
+                if (builder.rightType === 'num') {
+                    builder.rightValue = document.getElementById('rightNum').value || '2';
+                } else {
+                    builder.rightValue = document.getElementById('rightSelect').value || Object.keys(VARS)[0];
+                }
+            }
+            updateOpButtons();
+            updateRightRow();
+            if (selectedStep >= 0) syncBuilderToModel();
+        }
+
+        function updateOpButtons() {
+            document.querySelectorAll('.op-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.op === builder.op);
+            });
+        }
+
+        function updateRightRow() {
+            const row = document.getElementById('rightRow');
+            row.classList.toggle('disabled', !builder.op);
+        }
+
+        // Listen for input changes
+        document.getElementById('leftSelect').addEventListener('change', function() {
+            builder.leftValue = this.value;
+            if (selectedStep >= 0) syncBuilderToModel();
+        });
+        document.getElementById('leftNum').addEventListener('input', function() {
+            builder.leftValue = this.value;
+            if (selectedStep >= 0) syncBuilderToModel();
+        });
+        document.getElementById('rightSelect').addEventListener('change', function() {
+            builder.rightValue = this.value;
+            if (selectedStep >= 0) syncBuilderToModel();
+        });
+        document.getElementById('rightNum').addEventListener('input', function() {
+            builder.rightValue = this.value;
+            if (selectedStep >= 0) syncBuilderToModel();
+        });
+        document.getElementById('labelInput').addEventListener('input', function() {
+            builder.label = this.value;
+            if (selectedStep >= 0) syncBuilderToModel();
+        });
+
+        // ===== Block Management =====
+        function addOrUpdateBlock() {
+            if (selectedStep >= 0) {
+                // Already syncing live — just deselect
+                deselectStep();
+                return;
+            }
+
+            // Add new block
+            const block = {
+                left: { type: builder.leftType, value: builder.leftType === 'id' ? document.getElementById('leftSelect').value : document.getElementById('leftNum').value }
+            };
+
+            if (builder.op) {
+                block.op = builder.op;
+                block.right = {
+                    type: builder.rightType,
+                    value: builder.rightType === 'id' ? document.getElementById('rightSelect').value : document.getElementById('rightNum').value
+                };
+            }
+
+            if (builder.label) block.label = builder.label;
+
+            if (model.steps.length > 0) {
+                model.ops.push('+');
+            }
+
+            model.steps.push({ type: 'block', block });
+            pushUndo();
+            refresh();
+        }
+
+        function removeBlock(idx) {
+            if (idx === 0 && model.ops.length > 0) {
+                model.ops.splice(0, 1);
+            } else if (idx > 0) {
+                model.ops.splice(idx - 1, 1);
+            }
+            model.steps.splice(idx, 1);
+
+            if (selectedStep === idx) deselectStep();
+            else if (selectedStep > idx) selectedStep--;
+
+            pushUndo();
+            refresh();
+        }
+
+        function selectStep(idx) {
+            if (selectedStep === idx) {
+                deselectStep();
+                return;
+            }
+            selectedStep = idx;
+            loadStepIntoBuilder(idx);
+            refresh();
+        }
+
+        function deselectStep() {
+            selectedStep = -1;
+            resetBuilder();
+            refresh();
+        }
+
+        function loadStepIntoBuilder(idx) {
+            const step = model.steps[idx];
+            if (!step) return;
+            const b = step.block;
+
+            builder.leftType = b.left.type;
+            builder.leftValue = b.left.value;
+            builder.op = b.op || null;
+            builder.rightType = b.right?.type || 'num';
+            builder.rightValue = b.right?.value || '2';
+            builder.label = b.label || '';
+
+            // Sync UI
+            const leftToggle = document.getElementById('leftToggle');
+            if (builder.leftType === 'id') {
+                leftToggle.textContent = 'Var'; leftToggle.className = 'type-toggle id-mode';
+                document.getElementById('leftSelect').style.display = '';
+                document.getElementById('leftNum').style.display = 'none';
+                document.getElementById('leftSelect').value = builder.leftValue;
+            } else {
+                leftToggle.textContent = '#'; leftToggle.className = 'type-toggle num-mode';
+                document.getElementById('leftSelect').style.display = 'none';
+                document.getElementById('leftNum').style.display = '';
+                document.getElementById('leftNum').value = builder.leftValue;
+            }
+
+            const rightToggle = document.getElementById('rightToggle');
+            if (builder.rightType === 'id') {
+                rightToggle.textContent = 'Var'; rightToggle.className = 'type-toggle id-mode';
+                document.getElementById('rightSelect').style.display = '';
+                document.getElementById('rightNum').style.display = 'none';
+                document.getElementById('rightSelect').value = builder.rightValue;
+            } else {
+                rightToggle.textContent = '#'; rightToggle.className = 'type-toggle num-mode';
+                document.getElementById('rightSelect').style.display = 'none';
+                document.getElementById('rightNum').style.display = '';
+                document.getElementById('rightNum').value = builder.rightValue;
+            }
+
+            document.getElementById('labelInput').value = builder.label;
+            updateOpButtons();
+            updateRightRow();
+            syncPanelUI();
+        }
+
+        function syncBuilderToModel() {
+            if (selectedStep < 0) return;
+            const step = model.steps[selectedStep];
+            if (!step) return;
+
+            step.block.left = { type: builder.leftType, value: builder.leftValue };
+
+            if (builder.op) {
+                step.block.op = builder.op;
+                step.block.right = builder.rightValue
+                    ? { type: builder.rightType, value: builder.rightValue }
+                    : null;
+            } else {
+                delete step.block.op;
+                step.block.right = null;
+            }
+
+            step.block.label = builder.label || undefined;
+            pushUndo();
+            refresh();
+        }
+
+        function syncPanelUI() {
+            const title = document.getElementById('builderTitle');
+            const btn = document.getElementById('btnAdd');
+            const labelRow = document.getElementById('labelRow');
+            const actions = document.getElementById('builderActions');
+
+            if (selectedStep >= 0) {
+                title.textContent = `Editing Block ${selectedStep + 1}`;
+                btn.textContent = '+ New Block';
+                btn.onclick = function() { deselectStep(); };
+                labelRow.classList.add('visible');
+
+                // Add delete button if not already there
+                if (!document.getElementById('btnDelete')) {
+                    const del = document.createElement('button');
+                    del.id = 'btnDelete';
+                    del.className = 'btn-danger';
+                    del.textContent = 'Delete';
+                    del.onclick = function() { removeBlock(selectedStep); };
+                    actions.insertBefore(del, document.querySelector('.actions-spacer'));
+                }
+            } else {
+                title.textContent = 'New Block';
+                btn.textContent = '+ Add Block';
+                btn.onclick = addOrUpdateBlock;
+                labelRow.classList.remove('visible');
+                const del = document.getElementById('btnDelete');
+                if (del) del.remove();
+            }
+        }
+
+        function resetBuilder() {
+            builder = {
+                leftType: 'id',
+                leftValue: Object.keys(VARS)[0],
+                op: null,
+                rightType: 'num',
+                rightValue: '2',
+                label: ''
+            };
+
+            const leftToggle = document.getElementById('leftToggle');
+            leftToggle.textContent = 'Var'; leftToggle.className = 'type-toggle id-mode';
+            document.getElementById('leftSelect').style.display = '';
+            document.getElementById('leftNum').style.display = 'none';
+            document.getElementById('leftSelect').value = builder.leftValue;
+
+            const rightToggle = document.getElementById('rightToggle');
+            rightToggle.textContent = '#'; rightToggle.className = 'type-toggle num-mode';
+            document.getElementById('rightSelect').style.display = 'none';
+            document.getElementById('rightNum').style.display = '';
+            document.getElementById('rightNum').value = '2';
+
+            document.getElementById('labelInput').value = '';
+            builder.op = null;
+            updateOpButtons();
+            updateRightRow();
+            syncPanelUI();
+        }
+
+        function clearAll() {
+            model = { steps: [], ops: [] };
+            selectedStep = -1;
+            resetBuilder();
+            pushUndo();
+            refresh();
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        }
+
+        // ===== Combine & Split =====
+        function combineBlocks(targetIdx, sourceIdx) {
+            const target = model.steps[targetIdx];
+            const source = model.steps[sourceIdx];
+            if (!target || !source) return;
+
+            // Use inter-op between them, or default +
+            const opIdx = Math.min(sourceIdx, targetIdx);
+            const combineOp = model.ops[opIdx] || '+';
+
+            target.block.op = combineOp;
+            target.block.right = { ...source.block.left };
+
+            // Remove source
+            if (sourceIdx === 0 && model.ops.length > 0) {
+                model.ops.splice(0, 1);
+            } else if (sourceIdx > 0) {
+                model.ops.splice(sourceIdx - 1, 1);
+            }
+            model.steps.splice(sourceIdx, 1);
+
+            selectedStep = -1;
+            resetBuilder();
+            pushUndo();
+            refresh();
+        }
+
+        function splitBlock(idx) {
+            const step = model.steps[idx];
+            if (!step || !step.block.op || !step.block.right) return;
+
+            const splitOp = step.block.op;
+            const leftStep = { type: 'block', block: { left: { ...step.block.left } } };
+            if (step.block.label) leftStep.block.label = step.block.label;
+            const rightStep = { type: 'block', block: { left: { ...step.block.right } } };
+
+            model.steps.splice(idx, 1, leftStep, rightStep);
+            model.ops.splice(idx, 0, splitOp);
+
+            if (selectedStep === idx) {
+                selectedStep = -1;
+                resetBuilder();
+            }
+
+            pushUndo();
+            refresh();
+        }
+
+        // ===== Cycle inter-op =====
+        function cycleInterOp(idx) {
+            const cycle = ['+', '-', '*', '/'];
+            const cur = model.ops[idx];
+            model.ops[idx] = cycle[(cycle.indexOf(cur) + 1) % cycle.length];
+            pushUndo();
+            refresh();
+        }
+
+        // ===== Cycle chip internal op =====
+        function cycleChipOp(stepIdx) {
+            const step = model.steps[stepIdx];
+            if (!step || !step.block.op) return;
+            const cycle = ['+', '-', '*', '/'];
+            step.block.op = cycle[(cycle.indexOf(step.block.op) + 1) % cycle.length];
+            if (selectedStep === stepIdx) {
+                builder.op = step.block.op;
+                updateOpButtons();
+            }
+            pushUndo();
+            refresh();
+        }
+
+        // ===== Drag & Drop =====
+        function onDragStart(e, idx) {
+            dragData = { idx };
+            e.target.closest('.step-chip').classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            document.getElementById('blockArea').classList.add('drag-active');
+
+            // Mark other chips as drop targets
+            document.querySelectorAll('.step-chip').forEach((chip, i) => {
+                if (i !== idx) chip.classList.add('drop-target');
+            });
+        }
+
+        function onDragEnd(e) {
+            document.querySelectorAll('.step-chip').forEach(chip => {
+                chip.classList.remove('dragging', 'drop-target', 'combine-target');
+            });
+            document.getElementById('blockArea').classList.remove('drag-active');
+            document.querySelectorAll('.drag-indicator').forEach(el => el.remove());
+            dragData = null;
+        }
+
+        function onChipDragOver(e, idx) {
+            e.preventDefault();
+            if (!dragData || dragData.idx === idx) return;
+
+            const chip = e.target.closest('.step-chip');
+            if (!chip) return;
+
+            const step = model.steps[idx];
+            const isSimple = step && !step.block.op && !step.block.right;
+
+            // Check if mouse is over center of a simple chip — combine target
+            if (isSimple) {
+                const rect = chip.getBoundingClientRect();
+                const centerZone = rect.width * 0.4;
+                const mouseX = e.clientX - rect.left;
+                if (mouseX > (rect.width - centerZone) / 2 && mouseX < (rect.width + centerZone) / 2) {
+                    document.querySelectorAll('.step-chip').forEach(c => c.classList.remove('combine-target'));
+                    chip.classList.add('combine-target');
+                    return;
+                }
+            }
+
+            chip.classList.remove('combine-target');
+        }
+
+        function onChipDragLeave(e, idx) {
+            const chip = e.target.closest('.step-chip');
+            if (chip) chip.classList.remove('combine-target');
+        }
+
+        function onChipDrop(e, idx) {
+            e.preventDefault();
+            if (!dragData || dragData.idx === idx) return;
+
+            const chip = e.target.closest('.step-chip');
+            if (chip && chip.classList.contains('combine-target')) {
+                // Combine
+                combineBlocks(idx, dragData.idx);
+            } else {
+                // Reorder
+                reorderBlock(dragData.idx, idx);
+            }
+            dragData = null;
+        }
+
+        function reorderBlock(fromIdx, toIdx) {
+            // Extract step
+            const step = model.steps.splice(fromIdx, 1)[0];
+            if (fromIdx === 0 && model.ops.length > 0) {
+                model.ops.splice(0, 1);
+            } else if (fromIdx > 0 && fromIdx - 1 < model.ops.length) {
+                model.ops.splice(fromIdx - 1, 1);
+            }
+
+            // Adjust target index
+            if (toIdx > fromIdx) toIdx--;
+            if (toIdx > model.steps.length) toIdx = model.steps.length;
+
+            model.steps.splice(toIdx, 0, step);
+            if (model.steps.length > 1 && model.ops.length < model.steps.length - 1) {
+                model.ops.splice(Math.max(0, toIdx - 1), 0, '+');
+            }
+
+            if (selectedStep >= 0) {
+                selectedStep = -1;
+                resetBuilder();
+            }
+
+            pushUndo();
+            refresh();
+        }
+
+        // ===== Undo/Redo =====
+        function pushUndo() {
+            const state = JSON.stringify(model);
+            // Don't push if same as current
+            if (undoPointer >= 0 && undoStack[undoPointer] === state) return;
+            // Trim future
+            undoStack = undoStack.slice(0, undoPointer + 1);
+            undoStack.push(state);
+            undoPointer = undoStack.length - 1;
+            updateUndoButtons();
+        }
+
+        function undo() {
+            if (undoPointer <= 0) return;
+            undoPointer--;
+            model = JSON.parse(undoStack[undoPointer]);
+            selectedStep = -1;
+            resetBuilder();
+            refresh();
+            updateUndoButtons();
+        }
+
+        function redo() {
+            if (undoPointer >= undoStack.length - 1) return;
+            undoPointer++;
+            model = JSON.parse(undoStack[undoPointer]);
+            selectedStep = -1;
+            resetBuilder();
+            refresh();
+            updateUndoButtons();
+        }
+
+        function updateUndoButtons() {
+            document.getElementById('btnUndo').style.display = undoStack.length > 1 ? '' : 'none';
+            document.getElementById('btnRedo').style.display = undoPointer < undoStack.length - 1 ? '' : 'none';
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
+            if (e.key === 'Escape' && selectedStep >= 0) { deselectStep(); }
+        });
+
+        // ===== Serialization (L→R parenthesized) =====
+        function serialize(mdl) {
+            if (!mdl.steps.length) return '';
+
+            function serStep(step) {
+                const b = step.block;
+                if (!b || !b.left) return '0';
+                const lv = b.left.value;
+                if (b.op && b.right) return '(' + lv + ' ' + b.op + ' ' + b.right.value + ')';
+                return String(lv);
+            }
+
+            let result = serStep(mdl.steps[0]);
+            for (let i = 0; i < mdl.ops.length && i + 1 < mdl.steps.length; i++) {
+                result = '(' + result + ' ' + mdl.ops[i] + ' ' + serStep(mdl.steps[i + 1]) + ')';
+            }
+            return result;
+        }
+
+        // ===== Evaluation =====
+        function evaluate(formula) {
+            try {
+                const context = { ...VARS };
+                const keys = Object.keys(context);
+                const values = Object.values(context);
+                const fn = new Function(...keys, `return ${formula}`);
+                const result = fn(...values);
+                return isNaN(result) || !isFinite(result) ? '?' : Number(result.toFixed(2));
+            } catch { return '?'; }
+        }
+
+        // ===== Display helpers =====
+        function displayOp(op) {
+            if (op === '*') return '\u00d7';
+            if (op === '/') return '\u00f7';
+            if (op === '-') return '\u2212';
+            return op;
+        }
+
+        function valueClass(type) {
+            return type === 'id' ? 'id' : 'num';
+        }
+
+        // ===== Render =====
+        function refresh() {
+            renderBlockArea();
+            renderPreview();
+            renderOutput();
+        }
+
+        function renderBlockArea() {
+            const el = document.getElementById('blockArea');
+            if (!model.steps.length) {
+                el.innerHTML = '<span class="block-area-empty">Use the builder below to add blocks, or load a preset</span>';
+                el.classList.remove('has-selection');
+                return;
+            }
+
+            el.classList.toggle('has-selection', selectedStep >= 0);
+            const parts = [];
+
+            model.steps.forEach((step, idx) => {
+                // Inter-op
+                if (idx > 0 && model.ops[idx - 1] !== undefined) {
+                    parts.push(`<span class="inter-op" onclick="cycleInterOp(${idx - 1})" title="Click to cycle operator">${displayOp(model.ops[idx - 1])}</span>`);
+                }
+
+                const b = step.block;
+                const isCompound = b.op && b.right;
+                let cls = 'step-chip';
+                if (isCompound) cls += ' compound';
+                if (idx === selectedStep) cls += ' selected';
+
+                let inner = '';
+                // Label
+                if (b.label) inner += `<span class="chip-label">${b.label}</span>`;
+                // Delete button
+                inner += `<span class="chip-delete" onclick="event.stopPropagation(); removeBlock(${idx});">&times;</span>`;
+                // Split button for compounds
+                if (isCompound) inner += `<span class="chip-split" onclick="event.stopPropagation(); splitBlock(${idx});" title="Split into two blocks">&harr;</span>`;
+                // Left value
+                inner += `<span class="chip-value ${valueClass(b.left.type)}">${b.left.value}</span>`;
+                // Internal op + right (if compound)
+                if (isCompound) {
+                    inner += `<span class="chip-op" onclick="event.stopPropagation(); cycleChipOp(${idx});" title="Click to cycle">${displayOp(b.op)}</span>`;
+                    inner += `<span class="chip-value ${valueClass(b.right.type)}">${b.right.value}</span>`;
+                }
+
+                parts.push(`<div class="${cls}" draggable="true"
+                    onclick="selectStep(${idx})"
+                    ondragstart="onDragStart(event, ${idx})"
+                    ondragend="onDragEnd(event)"
+                    ondragover="onChipDragOver(event, ${idx})"
+                    ondragleave="onChipDragLeave(event, ${idx})"
+                    ondrop="onChipDrop(event, ${idx})">${inner}</div>`);
+            });
+
+            // Inline result
+            const formula = serialize(model);
+            const result = evaluate(formula);
+            parts.push(`<span style="margin-left: 0.3rem; display: inline-flex; align-items: center; gap: 0.3rem; font-family: 'JetBrains Mono', monospace;"><span style="color: var(--ink-fade); font-size: 1.1rem;">=</span> <span style="color: var(--lavender-glow); font-weight: 600; font-size: 1.1rem;">${result}</span></span>`);
+
+            el.innerHTML = parts.join('');
+        }
+
+        function renderPreview() {
+            const el = document.getElementById('preview');
+            if (!model.steps.length) {
+                el.innerHTML = '<span class="fp-empty">Add blocks to see the formula</span>';
+                return;
+            }
+
+            const parts = [];
+
+            model.steps.forEach((step, idx) => {
+                // Inter-op
+                if (idx > 0 && model.ops[idx - 1] !== undefined) {
+                    parts.push(`<span class="fp-op">${displayOp(model.ops[idx - 1])}</span>`);
+                }
+
+                const b = step.block;
+                if (b.op && b.right) {
+                    // Compound block in brackets
+                    parts.push(`<span class="fp-compound"><span class="fp-bracket">[</span><span class="fp-value ${valueClass(b.left.type)}">${b.left.value}</span> <span class="fp-op">${displayOp(b.op)}</span> <span class="fp-value ${valueClass(b.right.type)}">${b.right.value}</span><span class="fp-bracket">]</span></span>`);
+                } else {
+                    parts.push(`<span class="fp-value ${valueClass(b.left.type)}">${b.left.value}</span>`);
+                }
+            });
+
+            const formula = serialize(model);
+            const result = evaluate(formula);
+            parts.push(`<span class="fp-equals">=</span>`);
+            parts.push(`<span class="fp-result">${result}</span>`);
+
+            el.innerHTML = parts.join(' ');
+        }
+
+        function renderOutput() {
+            const formula = serialize(model);
+            document.getElementById('outputString').textContent = formula || '\u2014';
+        }
+
+        // ===== Presets =====
+        function loadPreset(name) {
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById(`preset-${name}`);
+            if (btn) btn.classList.add('active');
+
+            selectedStep = -1;
+            resetBuilder();
+
+            if (name === 'damage') {
+                model = {
+                    steps: [
+                        { type: 'block', block: { left: { type: 'id', value: 'Strength' }, op: '*', right: { type: 'num', value: '2' }, label: 'base' } },
+                        { type: 'block', block: { left: { type: 'id', value: 'Defense' } } },
+                        { type: 'block', block: { left: { type: 'id', value: 'Armor' } } },
+                        { type: 'block', block: { left: { type: 'id', value: 'Level' } } }
+                    ],
+                    ops: ['-', '-', '+']
+                };
+            } else if (name === 'health') {
+                model = {
+                    steps: [
+                        { type: 'block', block: { left: { type: 'id', value: 'Vitality' }, op: '*', right: { type: 'num', value: '10' } } },
+                        { type: 'block', block: { left: { type: 'id', value: 'Level' }, op: '*', right: { type: 'num', value: '5' } } },
+                        { type: 'block', block: { left: { type: 'num', value: '20' } } }
+                    ],
+                    ops: ['+', '+']
+                };
+            } else if (name === 'speed') {
+                model = {
+                    steps: [
+                        { type: 'block', block: { left: { type: 'id', value: 'Speed' } } },
+                        { type: 'block', block: { left: { type: 'id', value: 'Luck' }, op: '/', right: { type: 'num', value: '2' } } },
+                        { type: 'block', block: { left: { type: 'id', value: 'Armor' }, op: '*', right: { type: 'num', value: '0.5' } } }
+                    ],
+                    ops: ['+', '-']
+                };
+            }
+
+            undoStack = [JSON.stringify(model)];
+            undoPointer = 0;
+            updateUndoButtons();
+            refresh();
+        }
+
+        // ===== Start =====
+        init();
+    </script>
+</body>
+</html>

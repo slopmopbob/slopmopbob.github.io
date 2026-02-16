@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conditional Logic - Spawn & States Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --shadow: #1a1512;
+            --panel: #252019;
+            --panel-light: #302922;
+            --ink: #3d342c;
+            --ink-light: #4a3f36;
+            --ink-fade: #7a6e63;
+            --parchment: #e8e0d4;
+            --parchment-dim: #c4bab0;
+            --lavender: #a78db6;
+            --lavender-glow: #c4a8d0;
+            --lavender-dim: #8a7396;
+            --sage: #9cb68d;
+            --sage-glow: #b5cca8;
+            --warning: #c9a86c;
+            --danger: #b58a8a;
+            --node-mod: #a65d7a;
+        }
+
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--shadow);
+            color: var(--parchment);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--shadow); }
+        ::-webkit-scrollbar-thumb { background: var(--ink-light); border-radius: 3px; }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 2rem;
+            background: var(--panel);
+            border-bottom: 1px solid var(--ink-light);
+        }
+
+        .demo-header a {
+            color: var(--parchment-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .demo-header a:hover { color: var(--lavender); }
+
+        .demo-brand {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: var(--lavender);
+            letter-spacing: 0.08em;
+        }
+
+        .demo-layout {
+            max-width: 1060px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .demo-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: var(--lavender);
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-subtitle {
+            color: var(--ink-fade);
+            font-style: italic;
+            margin-bottom: 2rem;
+        }
+
+        /* Two columns */
+        .demo-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Condition builder */
+        .builder-panel {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+        }
+
+        .panel-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            color: var(--lavender);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .condition-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .condition-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem;
+            background: var(--shadow);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            transition: border-color 0.2s;
+        }
+
+        .condition-row.pass { border-color: var(--sage); }
+        .condition-row.fail { border-color: var(--danger); }
+
+        .condition-row select, .condition-row input {
+            background: var(--panel);
+            color: var(--parchment);
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            padding: 0.25rem 0.4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            outline: none;
+        }
+
+        .condition-row select:focus, .condition-row input:focus {
+            border-color: var(--lavender-dim);
+        }
+
+        .condition-row input[type="number"] { width: 55px; text-align: center; }
+        .condition-row select { cursor: pointer; }
+
+        .condition-result {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .condition-result.pass {
+            background: rgba(156, 182, 141, 0.3);
+            color: var(--sage-glow);
+        }
+
+        .condition-result.fail {
+            background: rgba(181, 138, 138, 0.3);
+            color: var(--danger);
+        }
+
+        .condition-remove {
+            color: var(--ink-fade);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .condition-remove:hover { color: var(--danger); }
+
+        /* Connectors */
+        .connector-row {
+            display: flex;
+            justify-content: center;
+            padding: 0.15rem 0;
+        }
+
+        .connector-btn {
+            padding: 0.15rem 0.6rem;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.2s;
+        }
+
+        .connector-btn.and {
+            background: rgba(100, 180, 100, 0.2);
+            color: #8fbc8f;
+            border-color: rgba(100, 180, 100, 0.4);
+        }
+
+        .connector-btn.or {
+            background: rgba(167, 141, 182, 0.2);
+            color: var(--lavender-glow);
+            border-color: rgba(167, 141, 182, 0.4);
+        }
+
+        /* Group container */
+        .group-container {
+            margin-left: 1rem;
+            padding: 0.5rem;
+            border-left: 2px solid var(--lavender-dim);
+            background: rgba(167, 141, 182, 0.05);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .group-label {
+            font-size: 0.6rem;
+            color: var(--lavender-dim);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.3rem;
+        }
+
+        /* Add buttons */
+        .add-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .btn-add {
+            padding: 0.35rem 0.75rem;
+            background: var(--panel-light);
+            color: var(--parchment-dim);
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add:hover { border-color: var(--lavender-dim); color: var(--lavender); }
+
+        /* Overall result */
+        .overall-result {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 4px;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .overall-result.pass {
+            background: rgba(156, 182, 141, 0.2);
+            border: 1px solid var(--sage);
+            color: var(--sage-glow);
+        }
+
+        .overall-result.fail {
+            background: rgba(181, 138, 138, 0.15);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        /* Impact preview */
+        .impact-preview {
+            margin-top: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: var(--shadow);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            color: var(--parchment-dim);
+            line-height: 1.6;
+            transition: border-color 0.3s;
+        }
+
+        .impact-preview.active {
+            border-color: var(--node-mod);
+        }
+
+        .impact-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.55rem;
+            color: var(--ink-fade);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .impact-mod {
+            color: #d4a0b8;
+            font-weight: 500;
+        }
+
+        .impact-effect {
+            color: var(--sage);
+        }
+
+        .impact-compound {
+            color: var(--warning);
+            font-weight: 500;
+        }
+
+        /* Variable sliders */
+        .var-sliders {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .slider-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--sage-glow);
+            min-width: 70px;
+        }
+
+        .slider-input {
+            flex: 1;
+            accent-color: var(--lavender);
+        }
+
+        .slider-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--parchment);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* Trait toggles */
+        .trait-toggles {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--ink-light);
+        }
+
+        .trait-toggle-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.6rem;
+            color: var(--lavender-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .trait-toggle-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .trait-toggle {
+            padding: 0.25rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: 1px solid var(--ink-light);
+            background: var(--shadow);
+            color: var(--parchment-dim);
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .trait-toggle.active {
+            background: rgba(139, 107, 184, 0.25);
+            border-color: var(--lavender-dim);
+            color: var(--lavender-glow);
+        }
+
+        /* Presets */
+        .presets {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 0.3rem 0.7rem;
+            background: var(--panel-light);
+            color: var(--parchment-dim);
+            border: 1px solid var(--ink-light);
+            border-radius: 3px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover { border-color: var(--lavender-dim); color: var(--lavender); }
+
+        /* Context */
+        .context-panel {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+            margin-top: 2rem;
+        }
+
+        .context-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--lavender);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        .context-text {
+            font-size: 0.9rem;
+            color: var(--parchment-dim);
+            line-height: 1.7;
+        }
+
+        .context-text strong { color: var(--lavender); }
+
+        .desc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .desc-col {
+            color: var(--parchment-dim);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .desc-heading {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--lavender);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .demo-columns { grid-template-columns: 1fr; }
+            .desc-grid { grid-template-columns: 1fr; }
+            .demo-layout { padding: 1rem; }
+        }
+
+        /* Embed mode */
+        body.embed-mode .demo-header,
+        body.embed-mode [data-embed-hide] { display: none !important; }
+        body.embed-mode .demo-layout { padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <script>if(location.search.includes('embed=1'))document.body.classList.add('embed-mode');</script>
+    <div class="demo-header">
+        <a href="../../projects/hierarchical-state-engine/index.html" class="demo-brand">Spawn &amp; States</a>
+        <a href="../../index.html#demos">&larr; Back</a>
+    </div>
+
+    <div class="demo-layout">
+        <h1 class="demo-title">Conditional Logic Builder</h1>
+        <p class="demo-subtitle">Define When Things Happen &mdash; Threshold Triggers with AND/OR Nesting</p>
+
+        <!-- Description + Technical Context (ABOVE demo) -->
+        <div data-embed-hide class="desc-grid">
+            <div class="desc-col">
+                <p class="desc-heading">What This Does</p>
+                <p>
+                    <strong style="color: var(--lavender);">Spawn &amp; States</strong> needs a way to define
+                    <em>when</em> things happen: when should a creature become Wounded? When should Berserk
+                    activate? The condition builder is that system. Each condition checks a variable against a
+                    threshold (<em>Health &lt; 25</em>) or checks whether a trait is active (<em>Aggressive = true</em>),
+                    and you combine them with AND/OR connectors and nested groups.
+                </p>
+                <p style="margin-top: 0.6rem;">
+                    These conditions are the <strong style="color: var(--lavender);">trigger mechanism</strong>
+                    for the modifier layer. Every reactive behavior in Spawn &amp; States &mdash; every modifier
+                    that activates, every compound that emerges &mdash; starts with a condition like the ones you build here.
+                </p>
+            </div>
+            <div class="desc-col">
+                <p class="desc-heading">What Happens When a Condition Fires</p>
+                <p>
+                    When a condition evaluates <strong style="color: var(--sage-glow);">TRUE</strong>,
+                    Spawn &amp; States activates the associated modifier. That modifier can change variable rates
+                    (Rage builds 50% faster), shift trait weights (more likely to become Reckless),
+                    or satisfy requirements for compound states like <em style="color: var(--warning);">Berserk</em>.
+                </p>
+                <p style="margin-top: 0.6rem;">
+                    <strong style="color: var(--lavender);">Hysteresis</strong> prevents flickering: a modifier might apply at
+                    Health &lt; 25 but only remove at Health &gt; 50, keeping the state stable through the gap. In the
+                    <a href="../entity-spawner/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Entity Spawner</a>
+                    demo, this is how modifiers like <em style="color: #d4a0b8;">Wounded</em>, <em style="color: #d4a0b8;">Enraged</em>, and <em style="color: #d4a0b8;">Exhausted</em> appear and persist.
+                </p>
+            </div>
+        </div>
+
+        <!-- How to use (instructions before demo) -->
+        <div class="context-panel" style="margin-bottom: 2rem; margin-top: 0;">
+            <div class="context-title">How To Use</div>
+            <div class="context-text" style="font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <strong>Build conditions</strong> on the left. Each one checks a variable threshold
+                    (<em>Stamina &lt; 25</em>) or an active state (<em>Poisoned = active</em>).
+                    Click <strong>AND/OR</strong> connectors to toggle logic.
+                </div>
+                <div>
+                    <strong>Simulate entity state</strong> on the right. Drag sliders and toggle traits to
+                    change the entity's current values. Conditions evaluate <strong>live</strong> &mdash;
+                    green means passing, red means failing.
+                </div>
+                <div>
+                    <strong>Watch the impact preview</strong> below the result. When conditions pass, you'll
+                    see what modifiers would activate and what downstream effects they'd trigger in a real
+                    entity &mdash; rate changes, new traits, compound states.
+                </div>
+            </div>
+        </div>
+
+        <!-- Where This Fits (above demo) -->
+        <div data-embed-hide class="context-panel" style="margin-bottom: 2rem; margin-top: 0;">
+            <div class="context-title">Where This Fits</div>
+            <div class="context-text" style="font-size: 0.85rem;">
+                <p>
+                    Conditions sit in the middle of the Spawn &amp; States cascade.
+                    <strong>Attributes</strong> are rolled at spawn time for each entity, influencing which
+                    <strong>traits</strong> get selected downstream. Traits then modify <strong>variable</strong>
+                    rates &mdash; an Aggressive creature's Rage builds faster, a Resilient one's Health
+                    drains slower. Variables connect to a tick system and deplete or accumulate over time.
+                    When they cross the thresholds defined by conditions like these, <strong>modifiers</strong>
+                    activate &mdash; which can cascade further, satisfying requirements for emergent
+                    <strong>compound</strong> states.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    This demo isolates just the condition evaluation step. In a live Spawn &amp; States
+                    entity, these conditions are checked every tick against real, changing state.
+                </p>
+            </div>
+        </div>
+
+        <!-- Demo -->
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <span style="font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--lavender); letter-spacing: 0.12em; text-transform: uppercase;">Interactive Demo</span>
+            <span style="flex: 1; height: 1px; background: var(--ink-light);"></span>
+            <a href="javascript:void(0)" onclick="window.open(location.pathname+'?embed=1', '_blank')" style="font-size: 0.75rem; color: var(--parchment-dim); text-decoration: none; border: 1px solid var(--ink-light); padding: 0.2rem 0.6rem; border-radius: 3px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--lavender-dim)'; this.style.color='var(--lavender)'" onmouseout="this.style.borderColor='var(--ink-light)'; this.style.color='var(--parchment-dim)'">Open in new tab &nearr;</a>
+        </div>
+
+        <div class="presets">
+            <span style="font-size: 0.8rem; color: var(--ink-fade); margin-right: 0.25rem;">Presets:</span>
+            <button class="preset-btn" onclick="loadPreset('lowHealth')">Low Health</button>
+            <button class="preset-btn" onclick="loadPreset('berserk')">Berserk Trigger</button>
+            <button class="preset-btn" onclick="loadPreset('complex')">Complex Nested</button>
+        </div>
+
+        <div class="demo-columns">
+            <div>
+                <div class="builder-panel">
+                    <div class="panel-title">Condition Builder</div>
+                    <div id="conditionList" class="condition-list"></div>
+                    <div class="add-buttons">
+                        <button class="btn-add" onclick="addCondition()">+ Condition</button>
+                        <button class="btn-add" onclick="addGroup()">+ Group</button>
+                        <button class="btn-add" onclick="clearConditions()" style="margin-left:auto; color:var(--ink-fade);">Clear</button>
+                    </div>
+                    <div id="overallResult" class="overall-result fail">Condition: FALSE</div>
+                    <div id="impactPreview" class="impact-preview">
+                        <div class="impact-label">If this condition were a modifier trigger&hellip;</div>
+                        <div id="impactContent">Condition is false &mdash; modifier stays inactive.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="var-sliders">
+                    <div class="panel-title">Entity State</div>
+                    <div id="sliderArea"></div>
+
+                    <div class="trait-toggles">
+                        <div class="trait-toggle-label">Active Traits / Modifiers</div>
+                        <div class="trait-toggle-row" id="traitToggles"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post-demo: See Also -->
+        <div data-embed-hide class="context-panel">
+            <div class="context-title">See Also</div>
+            <div class="context-text" style="font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <p>
+                    The <a href="../entity-spawner/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Entity Spawner</a>
+                    runs the full Spawn &amp; States cascade &mdash; generate entities and watch conditions fire in
+                    real time as Health drops and Rage builds. Modifiers like <em style="color: #d4a0b8;">Wounded</em>
+                    and <em style="color: #d4a0b8;">Enraged</em> appear using the same threshold logic shown here.
+                </p>
+                <p>
+                    The <a href="../formula-builder/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Formula Builder</a>
+                    shows how Spawn &amp; States computes derived values &mdash; formulas that reference the same
+                    attributes and variables these conditions evaluate, recalculated every tick as entity state changes.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        const VARIABLES = {
+            Health: { value: 80, min: 0, max: 100 },
+            Stamina: { value: 60, min: 0, max: 100 },
+            Mana: { value: 45, min: 0, max: 100 },
+            Rage: { value: 10, min: 0, max: 100 },
+            Hunger: { value: 50, min: 0, max: 100 }
+        };
+
+        const TRAITS = {
+            Poisoned: false,
+            Shielded: false,
+            Enraged: false,
+            Exhausted: false,
+            Blessed: false
+        };
+
+        let conditions = [];
+        const OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
+
+        // Unique ID counter for condition DOM elements
+        let condIdCounter = 0;
+
+        // --- Init ---
+        function initSliders() {
+            const el = document.getElementById('sliderArea');
+            el.innerHTML = Object.entries(VARIABLES).map(([name, v]) => `
+                <div class="slider-row">
+                    <span class="slider-name">${name}</span>
+                    <input type="range" class="slider-input" min="${v.min}" max="${v.max}" value="${v.value}"
+                        oninput="updateVariable('${name}', this.value)">
+                    <span class="slider-val" id="val_${name}">${v.value}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateVariable(name, value) {
+            VARIABLES[name].value = Number(value);
+            document.getElementById('val_' + name).textContent = value;
+            refreshEvaluation();
+        }
+
+        function initTraitToggles() {
+            const el = document.getElementById('traitToggles');
+            el.innerHTML = Object.keys(TRAITS).map(name => `
+                <div class="trait-toggle" id="trait_${name}" onclick="toggleTrait('${name}')">${name}</div>
+            `).join('');
+        }
+
+        function toggleTrait(name) {
+            TRAITS[name] = !TRAITS[name];
+            document.getElementById('trait_' + name).classList.toggle('active', TRAITS[name]);
+            refreshEvaluation();
+        }
+
+        // --- Condition Management ---
+        function addCondition(targetList) {
+            const list = targetList || conditions;
+            if (list.length > 0) {
+                list.push({ type: 'connector', value: 'AND' });
+            }
+            list.push({
+                type: 'condition',
+                targetType: 'variable',
+                target: Object.keys(VARIABLES)[0],
+                operator: '<',
+                value: 30
+            });
+            fullRender();
+        }
+
+        function addGroup() {
+            if (conditions.length > 0) {
+                conditions.push({ type: 'connector', value: 'AND' });
+            }
+            const group = { type: 'group', children: [] };
+            group.children.push({
+                type: 'condition',
+                targetType: 'variable',
+                target: Object.keys(VARIABLES)[1],
+                operator: '<',
+                value: 40
+            });
+            group.children.push({ type: 'connector', value: 'OR' });
+            group.children.push({
+                type: 'condition',
+                targetType: 'variable',
+                target: Object.keys(VARIABLES)[2],
+                operator: '>',
+                value: 70
+            });
+            conditions.push(group);
+            fullRender();
+        }
+
+        function removeCondition(idx, parentList) {
+            const list = parentList || conditions;
+            if (idx > 0 && list[idx - 1]?.type === 'connector') {
+                list.splice(idx - 1, 2);
+            } else if (idx === 0 && list.length > 1 && list[1]?.type === 'connector') {
+                list.splice(0, 2);
+            } else {
+                list.splice(idx, 1);
+            }
+            fullRender();
+        }
+
+        function toggleConnector(idx, parentList) {
+            const list = parentList || conditions;
+            if (list[idx]?.type === 'connector') {
+                list[idx].value = list[idx].value === 'AND' ? 'OR' : 'AND';
+                fullRender();
+            }
+        }
+
+        function updateCondition(idx, field, value, parentList) {
+            const list = parentList || conditions;
+            const cond = list[idx];
+            if (!cond || cond.type !== 'condition') return;
+
+            if (field === 'targetType') {
+                cond.targetType = value;
+                if (value === 'variable') {
+                    cond.target = Object.keys(VARIABLES)[0];
+                    cond.operator = '<';
+                    cond.value = 30;
+                } else {
+                    cond.target = Object.keys(TRAITS)[0];
+                    cond.operator = '==';
+                    cond.value = 'active';
+                }
+            } else if (field === 'target') {
+                cond.target = value;
+            } else if (field === 'operator') {
+                cond.operator = value;
+            } else if (field === 'value') {
+                cond.value = cond.targetType === 'variable' ? Number(value) : value;
+            }
+
+            fullRender();
+        }
+
+        function clearConditions() {
+            conditions = [];
+            fullRender();
+        }
+
+        // --- Evaluation (pure functions, no DOM side effects) ---
+        function evaluateCondition(cond) {
+            if (cond.targetType === 'trait') {
+                const isActive = TRAITS[cond.target] || false;
+                if (cond.value === 'active') return isActive;
+                return !isActive;
+            }
+
+            const varVal = VARIABLES[cond.target]?.value ?? 0;
+            const threshold = Number(cond.value);
+
+            switch (cond.operator) {
+                case '<': return varVal < threshold;
+                case '<=': return varVal <= threshold;
+                case '>': return varVal > threshold;
+                case '>=': return varVal >= threshold;
+                case '==': return varVal === threshold;
+                case '!=': return varVal !== threshold;
+                default: return false;
+            }
+        }
+
+        function evaluateList(list) {
+            if (list.length === 0) return false;
+
+            let result = null;
+            let pendingOp = null;
+
+            for (const item of list) {
+                if (item.type === 'connector') {
+                    pendingOp = item.value;
+                } else {
+                    const val = item.type === 'group'
+                        ? evaluateList(item.children)
+                        : evaluateCondition(item);
+
+                    if (result === null) {
+                        result = val;
+                    } else if (pendingOp === 'AND') {
+                        result = result && val;
+                    } else if (pendingOp === 'OR') {
+                        result = result || val;
+                    }
+                }
+            }
+
+            return result || false;
+        }
+
+        function evaluateWithResults(list) {
+            for (const item of list) {
+                if (item.type === 'condition') {
+                    item._result = evaluateCondition(item);
+                } else if (item.type === 'group') {
+                    evaluateWithResults(item.children);
+                    item._result = evaluateList(item.children);
+                }
+            }
+        }
+
+        // --- Two separate update paths ---
+
+        // fullRender: rebuilds condition DOM + evaluates (for structural changes)
+        function fullRender() {
+            evaluateWithResults(conditions);
+            renderConditions();
+            updateOverallResult();
+            updateImpactPreview();
+        }
+
+        // refreshEvaluation: just re-evaluates and updates visual indicators (for slider/trait changes)
+        // Does NOT rebuild condition DOM — just updates pass/fail classes on existing elements
+        function refreshEvaluation() {
+            evaluateWithResults(conditions);
+            updateConditionIndicators(conditions);
+            updateOverallResult();
+            updateImpactPreview();
+        }
+
+        function updateOverallResult() {
+            const overall = evaluateList(conditions);
+            const el = document.getElementById('overallResult');
+            el.className = 'overall-result ' + (overall ? 'pass' : 'fail');
+            el.textContent = 'Condition: ' + (overall ? 'TRUE' : 'FALSE');
+        }
+
+        // Walk the conditions tree and update pass/fail classes on existing DOM elements
+        function updateConditionIndicators(list) {
+            for (const item of list) {
+                if (item.type === 'condition' && item._domId) {
+                    const row = document.getElementById(item._domId);
+                    if (row) {
+                        const pass = item._result;
+                        row.className = 'condition-row ' + (pass ? 'pass' : 'fail');
+                        const indicator = row.querySelector('.condition-result');
+                        if (indicator) {
+                            indicator.className = 'condition-result ' + (pass ? 'pass' : 'fail');
+                            indicator.textContent = pass ? '\u2713' : '\u2717';
+                        }
+                    }
+                } else if (item.type === 'group') {
+                    updateConditionIndicators(item.children);
+                }
+            }
+        }
+
+        // Impact preview: show what would happen if this condition were a modifier trigger
+        function updateImpactPreview() {
+            const overall = evaluateList(conditions);
+            const el = document.getElementById('impactContent');
+            const panel = document.getElementById('impactPreview');
+
+            if (conditions.length === 0) {
+                panel.classList.remove('active');
+                el.innerHTML = 'Add conditions above to see what they could trigger.';
+                return;
+            }
+
+            if (overall) {
+                panel.classList.add('active');
+                // Generate contextual impact based on what conditions are checking
+                const impacts = getContextualImpacts();
+                el.innerHTML = impacts;
+            } else {
+                panel.classList.remove('active');
+                el.innerHTML = 'Condition is <span style="color:var(--danger)">false</span> &mdash; modifier stays inactive. Adjust the entity state on the right to see what happens when it fires.';
+            }
+        }
+
+        function getContextualImpacts() {
+            // Analyze what variables/traits are being checked to generate relevant impact text
+            const checkedVars = new Set();
+            const checkedTraits = new Set();
+            gatherCheckedTargets(conditions, checkedVars, checkedTraits);
+
+            let parts = ['<span style="color:var(--sage-glow)">Condition is true</span> &mdash; modifier activates. In a live entity, this could:'];
+            const effects = [];
+
+            if (checkedVars.has('Health')) {
+                effects.push('Apply <span class="impact-mod">Wounded</span> or <span class="impact-mod">Critical</span> &rarr; creature becomes more <span class="impact-effect">Wary</span>, less <span class="impact-effect">Reckless</span>');
+            }
+            if (checkedVars.has('Stamina')) {
+                effects.push('Apply <span class="impact-mod">Exhausted</span> &rarr; Rage buildup slows by 50%, creature avoids <span class="impact-effect">Reckless</span> stance');
+            }
+            if (checkedVars.has('Rage')) {
+                effects.push('Apply <span class="impact-mod">Enraged</span> &rarr; Stamina drains 50% faster, creature shifts toward <span class="impact-effect">Reckless</span>');
+            }
+            if (checkedVars.has('Mana')) {
+                effects.push('Apply <span class="impact-mod">Mana Surge</span> or <span class="impact-mod">Mana Drained</span> &rarr; shifts <span class="impact-effect">Focused</span>/<span class="impact-effect">Wary</span> stance weights');
+            }
+            if (checkedTraits.has('Poisoned') || checkedTraits.has('Enraged') || checkedTraits.has('Exhausted')) {
+                effects.push('Combined with other active modifiers, could trigger compound states like <span class="impact-compound">Berserk</span>, <span class="impact-compound">Last Stand</span>, or <span class="impact-compound">Cornered</span>');
+            }
+
+            if (effects.length === 0) {
+                effects.push('Activate an associated modifier, changing variable rates and trait weights for the entity');
+                effects.push('If combined with other active states, potentially trigger emergent <span class="impact-compound">compound states</span>');
+            }
+
+            return parts[0] + '<br>' + effects.map(e => '&bull; ' + e).join('<br>');
+        }
+
+        function gatherCheckedTargets(list, vars, traits) {
+            for (const item of list) {
+                if (item.type === 'condition') {
+                    if (item.targetType === 'variable') vars.add(item.target);
+                    else if (item.targetType === 'trait') traits.add(item.target);
+                } else if (item.type === 'group') {
+                    gatherCheckedTargets(item.children, vars, traits);
+                }
+            }
+        }
+
+        // --- Render ---
+        function renderConditions() {
+            const el = document.getElementById('conditionList');
+            el.innerHTML = renderList(conditions, 'conditions');
+        }
+
+        function renderList(list, parentRef) {
+            return list.map((item, idx) => {
+                if (item.type === 'connector') {
+                    const cls = item.value === 'AND' ? 'and' : 'or';
+                    return `<div class="connector-row">
+                        <button class="connector-btn ${cls}" onclick="toggleConnector(${idx}, ${parentRef})">${item.value}</button>
+                    </div>`;
+                }
+
+                if (item.type === 'group') {
+                    const groupRef = `${parentRef}[${idx}].children`;
+                    return `<div class="group-container">
+                        <div class="group-label">(Group) <span class="condition-remove" onclick="removeCondition(${idx}, ${parentRef})">&times;</span></div>
+                        ${renderList(item.children, groupRef)}
+                    </div>`;
+                }
+
+                // Condition — assign a stable DOM id
+                const domId = 'cond_' + (condIdCounter++);
+                item._domId = domId;
+                const pass = item._result;
+                const resultCls = pass ? 'pass' : 'fail';
+                const resultIcon = pass ? '\u2713' : '\u2717';
+
+                if (item.targetType === 'trait') {
+                    return `<div class="condition-row ${resultCls}" id="${domId}">
+                        <span class="condition-result ${resultCls}">${resultIcon}</span>
+                        <select onchange="updateCondition(${idx}, 'targetType', this.value, ${parentRef})">
+                            <option value="variable">Variable</option>
+                            <option value="trait" selected>Trait</option>
+                        </select>
+                        <select onchange="updateCondition(${idx}, 'target', this.value, ${parentRef})">
+                            ${Object.keys(TRAITS).map(t => `<option ${item.target === t ? 'selected' : ''}>${t}</option>`).join('')}
+                        </select>
+                        <span style="font-size:0.75rem; color:var(--ink-fade);">is</span>
+                        <select onchange="updateCondition(${idx}, 'value', this.value, ${parentRef})">
+                            <option value="active" ${item.value === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="inactive" ${item.value === 'inactive' ? 'selected' : ''}>Inactive</option>
+                        </select>
+                        <span class="condition-remove" onclick="removeCondition(${idx}, ${parentRef})">&times;</span>
+                    </div>`;
+                }
+
+                return `<div class="condition-row ${resultCls}" id="${domId}">
+                    <span class="condition-result ${resultCls}">${resultIcon}</span>
+                    <select onchange="updateCondition(${idx}, 'targetType', this.value, ${parentRef})">
+                        <option value="variable" selected>Variable</option>
+                        <option value="trait">Trait</option>
+                    </select>
+                    <select onchange="updateCondition(${idx}, 'target', this.value, ${parentRef})">
+                        ${Object.keys(VARIABLES).map(v => `<option ${item.target === v ? 'selected' : ''}>${v}</option>`).join('')}
+                    </select>
+                    <select onchange="updateCondition(${idx}, 'operator', this.value, ${parentRef})">
+                        ${OPERATORS.map(op => `<option ${item.operator === op ? 'selected' : ''}>${op}</option>`).join('')}
+                    </select>
+                    <input type="number" value="${item.value}"
+                        onchange="updateCondition(${idx}, 'value', this.value, ${parentRef})"
+                        oninput="updateCondition(${idx}, 'value', this.value, ${parentRef})">
+                    <span class="condition-remove" onclick="removeCondition(${idx}, ${parentRef})">&times;</span>
+                </div>`;
+            }).join('');
+        }
+
+        // --- Presets ---
+        function loadPreset(name) {
+            // Reset all traits
+            Object.keys(TRAITS).forEach(t => TRAITS[t] = false);
+
+            // Reset all variables to defaults
+            VARIABLES.Health.value = 80;
+            VARIABLES.Stamina.value = 60;
+            VARIABLES.Mana.value = 45;
+            VARIABLES.Rage.value = 10;
+            VARIABLES.Hunger.value = 50;
+
+            if (name === 'lowHealth') {
+                conditions = [
+                    { type: 'condition', targetType: 'variable', target: 'Health', operator: '<', value: 25 }
+                ];
+                VARIABLES.Health.value = 18;
+            } else if (name === 'berserk') {
+                conditions = [
+                    { type: 'condition', targetType: 'variable', target: 'Rage', operator: '>', value: 60 },
+                    { type: 'connector', value: 'AND' },
+                    { type: 'condition', targetType: 'trait', target: 'Enraged', operator: '==', value: 'inactive' }
+                ];
+                VARIABLES.Rage.value = 75;
+            } else if (name === 'complex') {
+                conditions = [
+                    { type: 'condition', targetType: 'variable', target: 'Health', operator: '<', value: 30 },
+                    { type: 'connector', value: 'OR' },
+                    {
+                        type: 'group', children: [
+                            { type: 'condition', targetType: 'variable', target: 'Stamina', operator: '<', value: 25 },
+                            { type: 'connector', value: 'AND' },
+                            { type: 'condition', targetType: 'trait', target: 'Poisoned', operator: '==', value: 'active' }
+                        ]
+                    }
+                ];
+                VARIABLES.Health.value = 50;
+                VARIABLES.Stamina.value = 60;
+            }
+
+            // Rebuild sliders with current values
+            initSliders();
+            Object.keys(TRAITS).forEach(t => {
+                document.getElementById('trait_' + t).classList.toggle('active', TRAITS[t]);
+            });
+
+            fullRender();
+        }
+
+        // --- Init ---
+        initSliders();
+        initTraitToggles();
+        loadPreset('complex');
+    </script>
+</body>
+</html>

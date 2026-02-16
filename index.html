@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shane Ostrom - Game Developer & Systems Designer</title>
+    <meta name="description" content="Portfolio of Shane Ostrom — game developer and systems designer. Creator of Spawn & States, a configurable state engine for generating entities with layered traits, dynamic variables, and emergent behaviors.">
+    <meta name="author" content="Shane Ostrom">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Shane Ostrom - Game Developer & Systems Designer">
+    <meta property="og:description" content="Creator of Spawn & States, a configurable state engine for generating entities with layered traits, dynamic variables, and emergent behaviors.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://shaneostrom.com">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Shane Ostrom - Game Developer & Systems Designer">
+    <meta name="twitter:description" content="Creator of Spawn & States, a configurable state engine for generating entities with layered traits, dynamic variables, and emergent behaviors.">
+
+    <!-- Preconnect for faster font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="#" class="nav-logo">Shane Ostrom</a>
+            <ul class="nav-links">
+                <li><a href="#engine">Engine</a></li>
+                <li><a href="#demos">Demos</a></li>
+                <li><a href="projects/hierarchical-state-engine/docs/index.html">Docs</a></li>
+                <li><a href="#mabels-tale">Mabel's Tale</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Shane Ostrom</h1>
+                <p class="hero-email"><a href="mailto:smostroms@gmail.com">smostroms@gmail.com</a></p>
+                <p class="hero-subtitle">Closed systems with emergent results.</p>
+                <p class="hero-description">
+                    I design deterministic game systems that define rules, wire relationships,
+                    and let complexity emerge from cascading interactions. I'm currently developing
+                    a state engine and a tavern sim that runs on it.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#engine" class="btn btn-primary">See the Engine</a>
+                    <a href="#demos" class="btn btn-secondary">Try a Demo</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Spawn & States Engine -->
+    <section id="engine" class="section engine">
+        <div class="container">
+            <h2 class="section-title">Spawn & States</h2>
+            <p class="section-subtitle">A configurable state engine for generating entities with layered traits, dynamic variables, and emergent compound states.</p>
+
+            <div class="engine-overview">
+                <div class="engine-description">
+                    <p>
+                        Define attributes, traits, variables, modifiers, and compounds in a single JSON config.
+                        Connect them with typed relationships. The engine handles weighted trait selection, variable
+                        ticking, threshold triggers, and compound emergence automatically.
+                    </p>
+                    <p>
+                        Entities spawn from presets or dynamic generation, live in managed pools, and evolve
+                        through a configurable tick system. One config produces thousands of unique entities
+                        with distinct behaviors. Available as a JavaScript library with visual editor and
+                        a Godot 4.x plugin.
+                    </p>
+                    <div class="engine-links">
+                        <a href="projects/hierarchical-state-engine/reference/spawn-editor.html" target="_blank" class="btn btn-primary">Open the Editor</a>
+                        <a href="projects/hierarchical-state-engine/index.html" class="btn btn-secondary">How It Works</a>
+                    </div>
+                    <div class="engine-docs-link">
+                        <a href="projects/hierarchical-state-engine/docs/index.html">Architecture &amp; performance docs &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- Cascade Flow Diagram -->
+                <div class="cascade-diagram">
+                    <div class="cascade-label">The Cascade</div>
+                    <div class="cascade-flow">
+                        <div class="cascade-step">
+                            <span class="cascade-node attr">Attributes</span>
+                            <span class="cascade-desc">Static stats rolled at spawn</span>
+                        </div>
+                        <div class="cascade-arrow">&darr;</div>
+                        <div class="cascade-step">
+                            <span class="cascade-node var">Variables</span>
+                            <span class="cascade-desc">Dynamic values that tick over time</span>
+                        </div>
+                        <div class="cascade-arrow">&darr;</div>
+                        <div class="cascade-step">
+                            <span class="cascade-node trait">Traits</span>
+                            <span class="cascade-desc">Weighted selection from layers</span>
+                        </div>
+                        <div class="cascade-arrow">&darr;</div>
+                        <div class="cascade-step">
+                            <span class="cascade-node mod">Modifiers</span>
+                            <span class="cascade-desc">Threshold-triggered state changes</span>
+                        </div>
+                        <div class="cascade-arrow">&darr;</div>
+                        <div class="cascade-step">
+                            <span class="cascade-node comp">Compounds</span>
+                            <span class="cascade-desc">Emergent from active combinations</span>
+                        </div>
+                        <div class="cascade-arrow">&darr;</div>
+                        <div class="cascade-step">
+                            <span class="cascade-node derived">Derived Values</span>
+                            <span class="cascade-desc">Computed from formulas</span>
+                        </div>
+                    </div>
+                    <div class="cascade-footnote">
+                        Relationships connect any node to any other: weight influences, rate modifiers,
+                        eligibility gates, and more.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workflow -->
+            <div class="workflow-strip">
+                <div class="workflow-step">
+                    <span class="workflow-num">1</span>
+                    <div>
+                        <strong>Design</strong>
+                        <span>Build configs in the visual editor with nodes, connections, and presets</span>
+                    </div>
+                </div>
+                <div class="workflow-arrow">&rarr;</div>
+                <div class="workflow-step">
+                    <span class="workflow-num">2</span>
+                    <div>
+                        <strong>Test</strong>
+                        <span>Simulate entities, tick time, and watch the cascade live</span>
+                    </div>
+                </div>
+                <div class="workflow-arrow">&rarr;</div>
+                <div class="workflow-step">
+                    <span class="workflow-num">3</span>
+                    <div>
+                        <strong>Integrate</strong>
+                        <span>Export JSON, load into your JavaScript or Godot project</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demos -->
+    <section id="demos" class="section demos">
+        <div class="container">
+            <h2 class="section-title">Try It</h2>
+            <p class="section-subtitle">Each demo isolates one part of the engine. The full editor combines all of them.</p>
+
+            <div class="demo-grid">
+                <a href="demos/formula-builder/index.html" class="demo-card">
+                    <div class="demo-card-header">
+                        <span class="demo-icon derived">f(x)</span>
+                        <span class="demo-tag">Derived Values</span>
+                    </div>
+                    <h3>Formula Builder</h3>
+                    <p>
+                        Build computed values with drag-and-drop blocks. Strict left-to-right evaluation,
+                        compound blocks, live preview. This is how Spawn &amp; States defines derived stats.
+                    </p>
+                    <span class="demo-cta">Try it &rarr;</span>
+                </a>
+
+                <a href="demos/entity-spawner/index.html" class="demo-card">
+                    <div class="demo-card-header">
+                        <span class="demo-icon attr">&#9862;</span>
+                        <span class="demo-tag">Full Cascade</span>
+                    </div>
+                    <h3>Entity Spawner</h3>
+                    <p>
+                        Generate entities and watch the whole cascade unfold. Attributes roll, traits get
+                        selected, variables tick, modifiers trigger, compounds emerge. Loaded with an RPG creature config.
+                    </p>
+                    <span class="demo-cta">Try it &rarr;</span>
+                </a>
+
+                <a href="demos/conditional-logic/index.html" class="demo-card">
+                    <div class="demo-card-header">
+                        <span class="demo-icon mod">&amp;&amp;</span>
+                        <span class="demo-tag">Modifier Triggers</span>
+                    </div>
+                    <h3>Conditional Logic</h3>
+                    <p>
+                        Design multi-condition triggers with AND/OR nesting. Adjust variable sliders
+                        and watch the evaluation tree light up in real time.
+                    </p>
+                    <span class="demo-cta">Try it &rarr;</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mabel's Tale -->
+    <section id="mabels-tale" class="section mabels-tale">
+        <div class="container">
+            <h2 class="section-title">Mabel's Tale</h2>
+            <div class="tale-content">
+                <div class="tale-description">
+                    <span class="project-status">In Development</span>
+                    <p>
+                        A 2D pixel art narrative adventure where you run a medieval tavern that doubles
+                        as a halfway house for cult escapees. Mabel listens, serves drinks, and slowly
+                        pieces together what happened to the people who walk through her door.
+                    </p>
+                    <p>
+                        Spawn & States powers the personality system. 23 personality types across 6
+                        emotional spectrums generate dynamic moods that drive contextual dialogue. Same engine,
+                        different scale: from abstract config to living characters.
+                    </p>
+                    <h4>Built with:</h4>
+                    <div class="tale-tech">
+                        <span class="skill-tag">Godot 4.5</span>
+                        <span class="skill-tag">Spawn & States Plugin</span>
+                        <span class="skill-tag">Pixel Art</span>
+                        <span class="skill-tag">Narrative Design</span>
+                    </div>
+                </div>
+                <div class="tale-preview">
+                    <div class="tale-screenshots">
+                        <img src="images/mabels-tale-bedroom.png" alt="Mabel's Tale - Bedroom scene with pixel art interior" class="tale-screenshot">
+                        <p class="tale-screenshot-caption">Mabel's bedroom — early build</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section id="about" class="section about">
+        <div class="container">
+            <h2 class="section-title">About</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>
+                        I'm an independent game developer focused on the systems layer: the part
+                        where you define rules and watch interesting things happen that you didn't
+                        explicitly author. Procedural generation, emergent behavior, simulation.
+                    </p>
+                    <p>
+                        Spawn & States started as a patron generator for a tavern sim and grew into
+                        a general-purpose state engine. I'm building it as both a standalone tool and
+                        the backbone of Mabel's Tale.
+                    </p>
+                    <div class="skills">
+                        <span class="skill-tag">Godot 4 / GDScript</span>
+                        <span class="skill-tag">JavaScript</span>
+                        <span class="skill-tag">Systems Design</span>
+                        <span class="skill-tag">Procedural Generation</span>
+                        <span class="skill-tag">Narrative Design</span>
+                        <span class="skill-tag">UI/UX</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="section contact">
+        <div class="container">
+            <h2 class="section-title">Get in Touch</h2>
+            <div class="contact-content">
+                <div class="contact-methods">
+                    <a href="mailto:smostroms@gmail.com" class="contact-card">
+                        <h3>Email</h3>
+                        <p>smostroms@gmail.com</p>
+                    </a>
+                    <a href="https://github.com/slopmopbob" target="_blank" class="contact-card">
+                        <h3>GitHub</h3>
+                        <p>@slopmopbob</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Shane Ostrom</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

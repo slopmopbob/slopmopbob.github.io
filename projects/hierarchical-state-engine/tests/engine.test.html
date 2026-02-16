@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hierarchical State Engine - Tests</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #1a1a2e;
+            color: #e8dcc8;
+        }
+        h1 { color: #b87333; margin-bottom: 1rem; }
+        .test-suite { margin-bottom: 2rem; }
+        .test-suite h2 {
+            color: #cd9a5c;
+            font-size: 1.1rem;
+            margin: 1rem 0 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #3d3529;
+        }
+        .test {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .test.pass { background: #1a3d2a; color: #4a7c59; }
+        .test.fail { background: #3d1a1a; color: #c54545; }
+        .summary {
+            padding: 1rem;
+            background: #252529;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        .summary.all-pass { border: 2px solid #4a7c59; }
+        .summary.has-fail { border: 2px solid #c54545; }
+    </style>
+</head>
+<body>
+    <h1>Hierarchical State Engine - Tests</h1>
+    <div id="summary" class="summary"></div>
+    <div id="results"></div>
+
+    <script src="../src/engine.js"></script>
+    <script>
+        // Minimal test framework
+        let passed = 0;
+        let failed = 0;
+        const results = [];
+
+        function test(name, fn) {
+            try {
+                fn();
+                passed++;
+                results.push({ name, pass: true });
+            } catch (e) {
+                failed++;
+                results.push({ name, pass: false, error: e.message });
+            }
+        }
+
+        function assert(condition, message = 'Assertion failed') {
+            if (!condition) throw new Error(message);
+        }
+
+        function assertEqual(actual, expected, message = '') {
+            if (actual !== expected) {
+                throw new Error(`${message} Expected ${expected}, got ${actual}`);
+            }
+        }
+
+        // Test configuration
+        const testConfig = {
+            id: 'test-config',
+            name: 'Test Config',
+            nodes: [
+                { id: 'attr_strength', name: 'Strength', type: 'attribute', config: { min: 1, max: 10, defaultRange: [3, 8] } },
+                { id: 'attr_speed', name: 'Speed', type: 'attribute', config: { min: 1, max: 10, defaultRange: [3, 8] } },
+                { id: 'var_health', name: 'Health', type: 'variable', config: { min: 0, max: 100, initial: 100, baseRate: -1, changeMode: 'timed', direction: 'deplete' } },
+                { id: 'var_energy', name: 'Energy', type: 'variable', config: { min: 0, max: 100, initial: 50, baseRate: 0, changeMode: 'manual' } },
+                { id: 'layer_class', name: 'Class', type: 'layer', config: { order: 1, selection: { mode: 'weighted', maxItems: 1, initialRolls: 1 }, itemIds: ['item_warrior', 'item_mage'] } },
+                { id: 'item_warrior', name: 'Warrior', type: 'item', config: { layerId: 'layer_class', selection: { baseWeight: 20 } } },
+                { id: 'item_mage', name: 'Mage', type: 'item', config: { layerId: 'layer_class', selection: { baseWeight: 20 } } },
+                { id: 'mod_buff', name: 'Buff', type: 'modifier', config: { durationType: 'timed', duration: 10 } },
+                { id: 'mod_debuff', name: 'Debuff', type: 'modifier', config: {} },
+                { id: 'comp_powered', name: 'Powered Up', type: 'compound', config: { requires: [{ modifier: 'mod_buff' }, { item: 'item_warrior' }], requirementLogic: 'all' } },
+                { id: 'derived_power', name: 'Power', type: 'derived', config: { formula: 'attr_strength * 10 + var_health', min: 0, max: 200 } }
+            ],
+            relationships: [
+                { sourceId: 'attr_strength', targetId: 'item_warrior', type: 'weight_influence', config: { operation: 'add', value: 5, scaling: 'perPoint', perPointSource: 'attr_strength' } },
+                { sourceId: 'item_warrior', targetId: 'var_health', type: 'rate_modifier', config: { operation: 'multiply', value: 0.5 } }
+            ]
+        };
+
+        // ========================================
+        // Configuration Tests
+        // ========================================
+
+        test('loadConfig: loads valid config', () => {
+            const engine = new SpawnEngine();
+            engine.loadConfig(testConfig);
+            assert(engine.config !== null);
+            assertEqual(engine.config.id, 'test-config');
+        });
+
+        test('loadConfig: indexes nodes correctly', () => {
+            const engine = new SpawnEngine(testConfig);
+            assert(engine.getNode('attr_strength') !== null);
+            assertEqual(engine.getNode('attr_strength').name, 'Strength');
+        });
+
+        test('loadConfig: indexes relationships', () => {
+            const engine = new SpawnEngine(testConfig);
+            const rels = engine.getRelationshipsFrom('attr_strength');
+            assertEqual(rels.length, 1);
+            assertEqual(rels[0].targetId, 'item_warrior');
+        });
+
+        // ========================================
+        // Node Query Tests
+        // ========================================
+
+        test('getNodesByType: returns correct nodes', () => {
+            const engine = new SpawnEngine(testConfig);
+            const attrs = engine.getAttributes();
+            assertEqual(attrs.length, 2);
+        });
+
+        test('getLayers: returns sorted layers', () => {
+            const engine = new SpawnEngine(testConfig);
+            const layers = engine.getLayers();
+            assertEqual(layers.length, 1);
+            assertEqual(layers[0].id, 'layer_class');
+        });
+
+        test('getLayerTraits: returns traits in layer', () => {
+            const engine = new SpawnEngine(testConfig);
+            const traits = engine.getLayerTraits('layer_class');
+            assertEqual(traits.length, 2);
+        });
+
+        // ========================================
+        // Spawn Tests
+        // ========================================
+
+        test('spawn: creates entity with attributes', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            assert(entity.id !== undefined);
+            assert(entity.attributes.attr_strength >= 1 && entity.attributes.attr_strength <= 10);
+        });
+
+        test('spawn: initializes variables', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            assertEqual(entity.variables.var_health.value, 100);
+            assertEqual(entity.variables.var_health.baseRate, -1);
+        });
+
+        test('spawn: selects traits from layers', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            const classTraits = entity.layers.layer_class.active;
+            assert(classTraits.length >= 1);
+            assert(classTraits[0] === 'item_warrior' || classTraits[0] === 'item_mage');
+        });
+
+        test('spawn: respects attribute overrides', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ attributes: { attr_strength: 10 } });
+            assertEqual(entity.attributes.attr_strength, 10);
+        });
+
+        test('spawn: respects forceTraits', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ forceTraits: ['item_warrior'] });
+            assert(entity.layers.layer_class.active.includes('item_warrior'));
+        });
+
+        test('spawn: calculates derived values', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ attributes: { attr_strength: 5 } });
+            // power = strength * 10 + health = 5 * 10 + 100 = 150
+            assertEqual(entity.derived.derived_power, 150);
+        });
+
+        // ========================================
+        // Entity Management Tests
+        // ========================================
+
+        test('getEntity: retrieves spawned entity', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            const retrieved = engine.getEntity(entity.id);
+            assertEqual(retrieved.id, entity.id);
+        });
+
+        test('getAllEntities: returns all entities', () => {
+            const engine = new SpawnEngine(testConfig);
+            engine.spawn();
+            engine.spawn();
+            assertEqual(engine.getAllEntities().length, 2);
+        });
+
+        test('despawn: removes entity', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            engine.despawn(entity.id);
+            assertEqual(engine.getEntity(entity.id), null);
+        });
+
+        // ========================================
+        // Tick Tests
+        // ========================================
+
+        test('tick: updates timed variables', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            const initialHealth = entity.variables.var_health.value;
+            engine.tick(entity, 1);
+            assert(entity.variables.var_health.value < initialHealth);
+        });
+
+        test('tick: respects rate modifiers from relationships', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ forceTraits: ['item_warrior'] });
+            // Warrior has rate_modifier 0.5 on health
+            // Base rate: -1, modified: -0.5
+            assertEqual(entity.variables.var_health.currentRate, -0.5);
+        });
+
+        test('tickAll: ticks all entities', () => {
+            const engine = new SpawnEngine(testConfig);
+            const e1 = engine.spawn();
+            const e2 = engine.spawn();
+            const h1 = e1.variables.var_health.value;
+            const h2 = e2.variables.var_health.value;
+            engine.tickAll(1);
+            assert(e1.variables.var_health.value < h1);
+            assert(e2.variables.var_health.value < h2);
+        });
+
+        // ========================================
+        // Variable Tests
+        // ========================================
+
+        test('modifyVariable: changes value by delta', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            engine.setVariable(entity, 'var_energy', 50);
+            engine.modifyVariable(entity, 'var_energy', 10);
+            assertEqual(entity.variables.var_energy.value, 60);
+        });
+
+        test('modifyVariable: clamps to min/max', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            engine.modifyVariable(entity, 'var_energy', 1000);
+            assertEqual(entity.variables.var_energy.value, 100);
+        });
+
+        test('setVariable: sets absolute value', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            engine.setVariable(entity, 'var_health', 25);
+            assertEqual(entity.variables.var_health.value, 25);
+        });
+
+        // ========================================
+        // Trait Tests
+        // ========================================
+
+        test('activateTrait: adds trait to layer', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            entity.layers.layer_class.active = []; // Clear
+            engine.activateTrait(entity, 'item_mage');
+            assert(entity.layers.layer_class.active.includes('item_mage'));
+        });
+
+        test('deactivateTrait: removes trait from layer', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ forceTraits: ['item_warrior'] });
+            engine.deactivateTrait(entity, 'item_warrior');
+            assert(!entity.layers.layer_class.active.includes('item_warrior'));
+        });
+
+        // ========================================
+        // Modifier Tests
+        // ========================================
+
+        test('applyModifier: adds modifier to entity', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            engine.applyModifier(entity, 'mod_buff');
+            assert(entity.modifiers.includes('mod_buff'));
+        });
+
+        test('removeModifier: removes modifier', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            engine.applyModifier(entity, 'mod_buff');
+            engine.removeModifier(entity, 'mod_buff');
+            assert(!entity.modifiers.includes('mod_buff'));
+        });
+
+        // ========================================
+        // Compound Tests
+        // ========================================
+
+        test('compounds: activate when requirements met', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ forceTraits: ['item_warrior'] });
+            engine.applyModifier(entity, 'mod_buff');
+            assert(entity.compounds.includes('comp_powered'));
+        });
+
+        test('compounds: deactivate when requirements not met', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ forceTraits: ['item_warrior'] });
+            engine.applyModifier(entity, 'mod_buff');
+            assert(entity.compounds.includes('comp_powered'));
+            engine.removeModifier(entity, 'mod_buff');
+            assert(!entity.compounds.includes('comp_powered'));
+        });
+
+        // ========================================
+        // Event Tests
+        // ========================================
+
+        test('on: subscribes to events', () => {
+            const engine = new SpawnEngine(testConfig);
+            let fired = false;
+            engine.on('entitySpawned', () => { fired = true; });
+            engine.spawn();
+            assert(fired);
+        });
+
+        test('on: returns unsubscribe function', () => {
+            const engine = new SpawnEngine(testConfig);
+            let count = 0;
+            const unsub = engine.on('entitySpawned', () => { count++; });
+            engine.spawn();
+            unsub();
+            engine.spawn();
+            assertEqual(count, 1);
+        });
+
+        test('variableChanged: fires on tick', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn();
+            let fired = false;
+            engine.on('variableChanged', () => { fired = true; });
+            engine.tick(entity, 1);
+            assert(fired);
+        });
+
+        // ========================================
+        // getState Tests
+        // ========================================
+
+        test('getState: returns summarized state', () => {
+            const engine = new SpawnEngine(testConfig);
+            const entity = engine.spawn({ attributes: { attr_strength: 5 } });
+            const state = engine.getState(entity.id);
+            assertEqual(state.id, entity.id);
+            assertEqual(state.attributes.attr_strength, 5);
+            assert(Array.isArray(state.activeTraits));
+            assert(typeof state.variables.var_health.value === 'number');
+        });
+
+        // ========================================
+        // Render Results
+        // ========================================
+
+        const summaryEl = document.getElementById('summary');
+        const resultsEl = document.getElementById('results');
+
+        summaryEl.className = 'summary ' + (failed === 0 ? 'all-pass' : 'has-fail');
+        summaryEl.innerHTML = `
+            <strong>${passed + failed} tests:</strong>
+            <span style="color: #4a7c59">${passed} passed</span>,
+            <span style="color: ${failed ? '#c54545' : '#6b5f52'}">${failed} failed</span>
+        `;
+
+        // Group by suite
+        let currentSuite = '';
+        let html = '';
+
+        for (const result of results) {
+            const suite = result.name.split(':')[0];
+            if (suite !== currentSuite) {
+                currentSuite = suite;
+                html += `<h2>${suite}</h2>`;
+            }
+
+            const status = result.pass ? 'pass' : 'fail';
+            const icon = result.pass ? '\u2713' : '\u2717';
+            const error = result.error ? ` - ${result.error}` : '';
+            html += `<div class="test ${status}">${icon} ${result.name}${error}</div>`;
+        }
+
+        resultsEl.innerHTML = html;
+    </script>
+</body>
+</html>

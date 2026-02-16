@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spawn & States Engine - Shane Ostrom</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            /* Warm Walnut Base */
+            --shadow: #1a1512;
+            --panel: #282119;
+            --panel-light: #352b22;
+            --ink: #4a3f35;
+            --ink-light: #5a4d42;
+            --ink-fade: #8a7d70;
+
+            /* Text Colors */
+            --parchment: #f0e8dc;
+            --parchment-dim: #d4c9bc;
+
+            /* Accent Colors - Vibrant Lavender & Sage */
+            --lavender: #c9a0d9;
+            --lavender-glow: #dfc0eb;
+            --lavender-dim: #a080b0;
+            --sage: #a8d090;
+            --sage-glow: #c4e8ac;
+            --sage-dim: #88b070;
+
+            /* Legacy aliases for compatibility */
+            --copper: var(--lavender);
+            --copper-glow: var(--lavender-glow);
+            --gold: var(--sage);
+            --success: #a8d090;
+            --warning: #e0c080;
+            --danger: #d0a0a0;
+            --accent-purple: var(--lavender-dim);
+            --accent-blue: #80a0c0;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--shadow);
+            color: var(--parchment);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--shadow); }
+        ::-webkit-scrollbar-thumb { background: var(--ink-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--copper); }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 11, 10, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--ink-light);
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            color: var(--copper);
+            text-decoration: none;
+            letter-spacing: 0.1em;
+        }
+
+        .nav-logo:hover { color: var(--copper-glow); }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--parchment);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--copper); }
+
+        /* Systems Quick Nav */
+        .systems-nav {
+            background: var(--panel);
+            border-bottom: 1px solid var(--ink-light);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 52px;
+            z-index: 900;
+        }
+
+        .systems-nav .container {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .systems-nav-link {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            color: var(--parchment-dim);
+            text-decoration: none;
+            letter-spacing: 0.08em;
+            padding: 0.4rem 0.8rem;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .systems-nav-link:hover {
+            color: var(--copper);
+            background: var(--panel-light);
+        }
+
+        .systems-nav-link.active {
+            color: var(--copper);
+            background: var(--panel-light);
+        }
+
+        @media (max-width: 480px) {
+            .systems-nav .container { gap: 0.75rem; }
+            .systems-nav-link { font-size: 0.7rem; padding: 0.3rem 0.6rem; }
+        }
+
+        /* Hero */
+        .hero {
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            background: linear-gradient(180deg, var(--panel) 0%, var(--shadow) 100%);
+            border-bottom: 1px solid var(--ink-light);
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: var(--copper);
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        .hero-tagline {
+            font-size: 1.1rem;
+            color: var(--ink-fade);
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero-flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            background: var(--panel);
+            border-radius: 4px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .flow-spawn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--panel-light);
+            border-radius: 4px;
+            border: 1px dashed var(--ink-light);
+        }
+
+        .flow-spawn-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--ink-fade);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .flow-state {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--panel-light);
+            border-radius: 4px;
+            border: 1px dashed var(--ink-light);
+        }
+
+        .flow-state-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--ink-fade);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .hero-flow span.node {
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .hero-flow .attr { background: rgba(168, 208, 144, 0.3); color: var(--sage-glow); border: 1px solid rgba(168, 208, 144, 0.4); }
+        .hero-flow .trait { background: rgba(201, 160, 217, 0.3); color: var(--lavender-glow); border: 1px solid rgba(201, 160, 217, 0.4); }
+        .hero-flow .var { background: rgba(180, 160, 200, 0.2); color: var(--lavender-glow); border: 1px solid rgba(180, 160, 200, 0.3); }
+        .hero-flow .mod { background: rgba(208, 160, 160, 0.3); color: #f0c8c8; border: 1px solid rgba(208, 160, 160, 0.4); }
+        .hero-flow .comp { background: rgba(224, 192, 128, 0.3); color: #f8e0a0; border: 1px solid rgba(224, 192, 128, 0.4); }
+        .hero-flow .arrow { color: var(--parchment-dim); font-size: 1rem; cursor: help; }
+        .hero-flow .arrow-bi { color: var(--parchment-dim); font-size: 0.9rem; cursor: help; }
+
+        /* Flow diagram tooltips */
+        .hero-flow span[data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+        .hero-flow span[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--shadow);
+            border: 1px solid var(--copper);
+            color: var(--parchment);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-family: 'Crimson Pro', serif;
+            font-size: 0.8rem;
+            white-space: normal;
+            width: max-content;
+            max-width: 250px;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 100;
+            pointer-events: none;
+            text-transform: none;
+            letter-spacing: normal;
+            line-height: 1.4;
+        }
+        .hero-flow span[data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+        .hero-flow span.node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 12px rgba(201, 160, 217, 0.4);
+        }
+        .hero-flow span.node {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        /* Relationships indicator */
+        .flow-relationships {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed var(--ink-light);
+        }
+        .rel-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.6rem;
+            color: var(--ink-fade);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* Hero concepts grid */
+        .hero-concepts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .concept {
+            text-align: left;
+            padding: 0.75rem;
+            background: var(--panel-light);
+            border-radius: 4px;
+            border-left: 3px solid var(--copper);
+        }
+        .concept-term {
+            display: block;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            color: var(--copper);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+        .concept {
+            font-size: 0.85rem;
+            color: var(--parchment-dim);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Sections */
+        .section {
+            padding: 4rem 0;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--copper);
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .section-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--ink-light);
+        }
+
+        /* Demo Section */
+        .demo-section {
+            background: var(--panel);
+            border-top: 1px solid var(--ink-light);
+            border-bottom: 1px solid var(--ink-light);
+        }
+
+        .demo-intro {
+            max-width: 700px;
+            margin-bottom: 2rem;
+        }
+
+        .demo-intro p {
+            color: var(--ink-fade);
+            margin-bottom: 1rem;
+        }
+
+        .demo-intro strong {
+            color: var(--parchment);
+        }
+
+        .demo-explanation {
+            background: var(--panel-light);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+        }
+        .demo-explanation h4 {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            color: var(--copper);
+            letter-spacing: 0.06em;
+            margin-bottom: 0.75rem;
+        }
+        .demo-explanation ul {
+            margin: 0;
+            padding: 0 0 0 1.25rem;
+        }
+        .demo-explanation li {
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .demo-explanation li strong {
+            color: var(--copper);
+        }
+        .demo-cta {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--ink-light);
+            font-style: italic;
+            color: var(--parchment-dim);
+        }
+
+        .demo-frame-wrapper {
+            background: var(--shadow);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .demo-frame-header {
+            background: var(--panel-light);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--ink-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .demo-frame-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            color: var(--copper);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .demo-frame-link {
+            font-size: 0.7rem;
+            color: var(--ink-fade);
+            text-decoration: none;
+        }
+
+        .demo-frame-link:hover {
+            color: var(--copper);
+        }
+
+        .demo-iframe {
+            width: 100%;
+            height: 550px;
+            border: none;
+            display: block;
+            pointer-events: auto;
+        }
+
+        /* Architecture Section */
+        .arch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .arch-card {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+
+        .arch-card:hover {
+            border-color: var(--copper);
+        }
+
+        .arch-card.arch-featured {
+            border-color: var(--copper);
+            background: linear-gradient(135deg, var(--panel) 0%, rgba(201, 160, 217, 0.08) 100%);
+            grid-column: 1 / -1;
+        }
+
+        @media (min-width: 600px) {
+            .arch-card.arch-featured {
+                grid-column: span 2;
+            }
+        }
+
+        .arch-card h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--copper-glow);
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .arch-card h3 .icon {
+            font-size: 1.2rem;
+        }
+
+        .arch-card p {
+            color: var(--parchment-dim);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .arch-card code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--shadow);
+            padding: 0.1rem 0.3rem;
+            border-radius: 2px;
+            font-size: 0.85rem;
+            color: var(--copper);
+        }
+
+        /* Use Cases Tabs */
+        .use-cases-widget {
+            background: var(--shadow);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .use-cases-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--ink-light);
+            overflow-x: auto;
+        }
+
+        .use-case-tab {
+            padding: 0.75rem 1.25rem;
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--ink-fade);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .use-case-tab:hover {
+            color: var(--parchment);
+            background: var(--panel-light);
+        }
+
+        .use-case-tab.active {
+            color: var(--lavender);
+            border-bottom-color: var(--lavender);
+            background: var(--panel);
+        }
+
+        .use-case-content {
+            display: none;
+            padding: 1.5rem;
+        }
+
+        .use-case-content.active {
+            display: block;
+        }
+
+        .use-case-example {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .use-case-diagram {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .use-case-description {
+            flex: 1;
+            color: var(--parchment-dim);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .mini-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 1.25rem;
+            background: var(--panel);
+            border-radius: 4px;
+            border: 1px solid var(--ink-light);
+        }
+
+        .mini-flow-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .mini-node {
+            padding: 0.4rem 0.75rem;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+
+        .mini-node.attr {
+            background: rgba(168, 208, 144, 0.25);
+            color: #c8ebb0;
+            border-color: rgba(168, 208, 144, 0.4);
+        }
+        .mini-node.trait {
+            background: rgba(201, 160, 217, 0.25);
+            color: #e8c8f4;
+            border-color: rgba(201, 160, 217, 0.4);
+        }
+        .mini-node.var {
+            background: rgba(180, 160, 200, 0.18);
+            color: #d8c0e8;
+            border-color: rgba(180, 160, 200, 0.3);
+        }
+        .mini-node.mod {
+            background: rgba(208, 160, 160, 0.25);
+            color: #f0c8c8;
+            border-color: rgba(208, 160, 160, 0.4);
+        }
+        .mini-node.comp {
+            background: rgba(224, 192, 128, 0.25);
+            color: #f8e0a0;
+            border-color: rgba(224, 192, 128, 0.4);
+        }
+
+        .mini-arrow {
+            color: var(--parchment-dim);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        .mini-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            color: var(--parchment-dim);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            min-width: 5.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Use case stepped lists */
+        .use-case-steps {
+            margin: 0;
+            padding: 0 0 0 1.25rem;
+            list-style: decimal;
+        }
+        .use-case-steps li {
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        .use-case-steps li strong {
+            color: var(--parchment);
+        }
+        .use-case-note {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--ink-light);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--ink-fade);
+        }
+        .use-case-note strong {
+            color: var(--copper);
+            font-style: normal;
+        }
+
+        @media (max-width: 768px) {
+            .use-case-example {
+                flex-direction: column;
+            }
+            .use-case-diagram {
+                min-width: 100%;
+            }
+            .mini-label {
+                min-width: 4.5rem;
+            }
+        }
+
+        /* How It Works Section */
+        .how-it-works-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .how-it-works-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .how-box {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+
+        .how-box h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--lavender-glow);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .how-box p {
+            color: var(--parchment-dim);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .how-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .how-box .example-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            color: var(--ink-fade);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .how-box .example-text {
+            color: var(--parchment);
+            font-style: italic;
+            padding-left: 1rem;
+            border-left: 2px solid var(--ink-light);
+        }
+
+        .tick-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .tick-step {
+            background: var(--panel-light);
+            border: 1px solid var(--ink-light);
+            padding: 0.4rem 0.75rem;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--parchment-dim);
+        }
+
+        .tick-arrow {
+            color: var(--ink-fade);
+        }
+
+        .how-box-modes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--ink-light);
+        }
+        .mode-item {
+            font-size: 0.8rem;
+            color: var(--parchment-dim);
+            padding: 0.25rem 0.5rem;
+            background: var(--shadow);
+            border-radius: 3px;
+        }
+        .mode-item strong {
+            color: var(--copper);
+        }
+
+        /* Design Decisions Section */
+        .decisions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .decision-card {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            padding: 1.25rem;
+        }
+
+        .decision-card h4 {
+            font-family: 'Cinzel', serif;
+            color: var(--sage-glow);
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .decision-card p {
+            color: var(--parchment-dim);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Go Deeper Section */
+        .deeper-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .deeper-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--parchment-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.6rem 1.2rem;
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .deeper-link:hover {
+            color: var(--lavender);
+            border-color: var(--lavender);
+        }
+
+        /* Code Section */
+        .code-block {
+            background: var(--panel);
+            border: 1px solid var(--ink-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: var(--panel-light);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--ink-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--ink-fade);
+        }
+
+        pre {
+            padding: 1.25rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--parchment);
+        }
+
+        .c-comment { color: var(--ink-fade); }
+        .c-keyword { color: #caa0a0; }
+        .c-string { color: var(--sage); }
+        .c-method { color: var(--lavender-glow); }
+        .c-type { color: var(--lavender-dim); }
+
+        /* Back Link */
+        .back-section {
+            text-align: center;
+            padding: 3rem 0;
+            border-top: 1px solid var(--ink-light);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--copper);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--copper);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            background: var(--copper);
+            color: var(--shadow);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--ink-fade);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--ink-light);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-content { padding: 0.75rem 1rem; }
+            .nav-links { gap: 1rem; }
+            .hero { padding: 6rem 1rem 3rem; }
+            .container { padding: 0 1rem; }
+            .section { padding: 3rem 0; }
+            .demo-iframe { height: 450px; }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links { display: none; }
+            .hero-flow { gap: 0.3rem; }
+            .hero-flow span { padding: 0.3rem 0.5rem; font-size: 0.65rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="../../index.html" class="nav-logo">Shane Ostrom</a>
+            <ul class="nav-links">
+                <li><a href="../../index.html#engine">Engine</a></li>
+                <li><a href="../../index.html#demos">Demos</a></li>
+                <li><a href="docs/index.html">Docs</a></li>
+                <li><a href="../../index.html#mabels-tale">Mabel's Tale</a></li>
+                <li><a href="../../index.html#about">About</a></li>
+                <li><a href="../../index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>Spawn & States Engine</h1>
+            <p class="hero-tagline">
+                A data-driven system for spawning entities from presets or dynamic rules, tracking state in pools, connecting to tick systems, and defining connections that cascade changes automatically.
+            </p>
+            <div class="hero-flow" id="hero-flow">
+                <div class="flow-row flow-spawn">
+                    <span class="flow-spawn-label">Spawn</span>
+                    <span class="node attr" data-tooltip="Base values rolled or set at spawn. Define core characteristics." data-connects="trait">Attributes</span>
+                    <span class="arrow-bi" data-tooltip="Bidirectional: attributes weight traits, traits can reference attributes">&harr;</span>
+                    <span class="node trait" data-tooltip="Dynamic characteristics selected from pools - weighted, gated, or triggered." data-connects="attr,var">Traits</span>
+                </div>
+                <span class="arrow flow-connector" data-tooltip="Connections link spawn-time state to runtime state">&darr;</span>
+                <div class="flow-row flow-state">
+                    <span class="flow-state-label">State</span>
+                    <span class="node var" data-tooltip="Values that change during gameplay: health, rage, time. Base rate + relationship modifiers." data-connects="mod">Variables</span>
+                    <span class="arrow" data-tooltip="rate_modifier: traits/modifiers adjust how fast variables tick">&rarr;</span>
+                    <span class="node mod" data-tooltip="Temporary states: threshold-triggered, spawn-applied, or manually toggled." data-connects="var,comp">Modifiers</span>
+                    <span class="arrow" data-tooltip="Compounds check for required combinations">&rarr;</span>
+                    <span class="node comp" data-tooltip="Emergent states when specific trait/modifier combinations align.">Compounds</span>
+                </div>
+                <div class="flow-relationships">
+                    <span class="rel-label">Connections link everything</span>
+                </div>
+            </div>
+            <div class="hero-concepts">
+                <div class="concept"><span class="concept-term">Spawn</span> Entities created from presets or generated dynamically</div>
+                <div class="concept"><span class="concept-term">Pools</span> Active entities stored with lifecycle management and logical despawn conditions</div>
+                <div class="concept"><span class="concept-term">Tick</span> Hooks into time systems (turns, seconds, custom)</div>
+                <div class="concept"><span class="concept-term">Connections</span> Declarative rules that automate state changes</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Systems Quick Navigation -->
+    <nav class="systems-nav">
+        <div class="container">
+            <a href="#spawn-system" class="systems-nav-link">Spawn System</a>
+            <a href="#state-system" class="systems-nav-link">State System</a>
+            <a href="#tick-system" class="systems-nav-link">Tick System</a>
+            <a href="#connections" class="systems-nav-link">Connections</a>
+        </div>
+    </nav>
+
+    <!-- Spawn System -->
+    <section id="spawn-system" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Spawn System</h2>
+            </div>
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
+                One-time entity generation. Roll attributes, select traits from weighted pools, and output complete snapshots.
+                Use for card packs, character creators, procedural loot, or any "generate once" scenario.
+            </p>
+
+            <div class="arch-grid">
+                <div class="arch-card">
+                    <h3><span class="icon">&#9632;</span> Attributes</h3>
+                    <p>
+                        Base values rolled <strong>or set</strong> at spawn. Define core characteristics
+                        that influence everything downstream.
+                    </p>
+                </div>
+                <div class="arch-card">
+                    <h3><span class="icon">&#9632;</span> Layers &amp; Traits</h3>
+                    <p>
+                        <strong>Layers</strong> group related traits into categories (personality, mood, class).
+                        <strong>Traits</strong> are characteristics selected from pools: weighted randomly,
+                        gated by conditions, or triggered by thresholds. Can come from presets or dynamic selection.
+                    </p>
+                </div>
+                <div class="arch-card">
+                    <h3><span class="icon">&#9632;</span> Presets</h3>
+                    <p>
+                        Named entity templates with fixed attributes, traits, and starting states.
+                        Spawn bosses, story characters, or specific archetypes deterministically while
+                        using dynamic generation for variety.
+                    </p>
+                </div>
+            </div>
+            <p style="color: var(--ink-fade); font-size: 0.85rem; margin-top: 1rem;">
+                Works with: <a href="#state-system" style="color: var(--lavender);">State System</a> (entities need somewhere to live) &bull;
+                <a href="#tick-system" style="color: var(--lavender);">Tick System</a> (traits can modify tick rates)
+                &bull; <a href="../../demos/entity-spawner/index.html" style="color: var(--sage);">Try: Entity Spawner &rarr;</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- State System -->
+    <section id="state-system" class="section" style="background: var(--panel);">
+        <div class="container">
+            <div class="section-header">
+                <h2>State System</h2>
+            </div>
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
+                Runtime entity management. Store entities in pools, track variables over time, apply modifiers,
+                and watch compounds emerge from combinations. The simulation layer.
+            </p>
+
+            <div class="arch-grid">
+                <div class="arch-card">
+                    <h3><span class="icon">&#9632;</span> Variables</h3>
+                    <p>
+                        Values that change during gameplay: health ticking down, rage building up, time passing.
+                        Each variable has a base rate, and connections adjust it based on active traits and modifiers.
+                    </p>
+                </div>
+                <div class="arch-card">
+                    <h3><span class="icon">&#9632;</span> Modifiers</h3>
+                    <p>
+                        Temporary states triggered by thresholds, applied at spawn, activated randomly, or
+                        toggled manually. Can cascade: one modifier's effects might trigger another.
+                    </p>
+                </div>
+                <div class="arch-card">
+                    <h3><span class="icon">&#9632;</span> Compounds</h3>
+                    <p>
+                        Emergent states when specific combinations align. Enable special game
+                        events and unique behaviors without explicit condition checking in game code.
+                    </p>
+                </div>
+                <div class="arch-card">
+                    <h3><span class="icon">&#9632;</span> Events</h3>
+                    <p>
+                        Hook into state changes with <code>engine.on()</code>. React to spawns,
+                        modifier triggers, compound activations, and threshold crossings to drive
+                        game logic, UI updates, and audio cues.
+                    </p>
+                </div>
+            </div>
+            <p style="color: var(--ink-fade); font-size: 0.85rem; margin-top: 1rem;">
+                Works with: <a href="#spawn-system" style="color: var(--lavender);">Spawn System</a> (where entities come from) &bull;
+                <a href="#tick-system" style="color: var(--lavender);">Tick System</a> (drives variable changes)
+                &bull; <a href="../../demos/entity-spawner/index.html" style="color: var(--sage);">Try: Entity Spawner &rarr;</a>
+                &bull; <a href="../../demos/conditional-logic/index.html" style="color: var(--sage);">Try: Conditional Logic &rarr;</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- Tick System -->
+    <section id="tick-system" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Tick System</h2>
+            </div>
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
+                Configurable time progression. A "tick" can be seconds, turns, heartbeats, or day cycles.
+                The engine handles variable progression, threshold checks, and cascade evaluation automatically.
+            </p>
+
+            <div class="how-box" style="max-width: 700px;">
+                <div class="tick-flow">
+                    <span class="tick-step">engine.tick(dt)</span>
+                    <span class="tick-arrow">&rarr;</span>
+                    <span class="tick-step">Variables change</span>
+                    <span class="tick-arrow">&rarr;</span>
+                    <span class="tick-step">Thresholds checked</span>
+                    <span class="tick-arrow">&rarr;</span>
+                    <span class="tick-step">Modifiers apply</span>
+                    <span class="tick-arrow">&rarr;</span>
+                    <span class="tick-step">Compounds evaluated</span>
+                </div>
+                <p style="margin-top: 1rem;">
+                    Track day/night cycles, simulate hunger over time, count action points. Same system, different time scales.
+                    The engine discovers emergent states automatically from your configuration.
+                </p>
+                <div class="how-box-modes">
+                    <div class="mode-item"><strong>Timed:</strong> Real seconds / milliseconds</div>
+                    <div class="mode-item"><strong>Turn-based:</strong> Discrete game turns</div>
+                    <div class="mode-item"><strong>Custom:</strong> Your own tick definition</div>
+                </div>
+            </div>
+            <p style="color: var(--ink-fade); font-size: 0.85rem; margin-top: 1rem;">
+                Works with: <a href="#state-system" style="color: var(--lavender);">State System</a> (what gets ticked) &bull;
+                <a href="#spawn-system" style="color: var(--lavender);">Spawn System</a> (traits define initial rates)
+                &bull; <a href="../../demos/entity-spawner/index.html" style="color: var(--sage);">Try: Entity Spawner &rarr;</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- Connections -->
+    <section id="connections" class="section" style="background: var(--panel);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Connections</h2>
+            </div>
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
+                The glue that ties everything together. Connections define how nodes influence each other
+                declaratively, in configuration, keeping game logic clean and maintainable.
+            </p>
+
+            <div class="how-it-works-grid">
+                <div class="how-box">
+                    <h3>Weight Influence</h3>
+                    <p class="example-text">
+                        "For each point of Strength, increase the Heavy trait's selection weight by +4."
+                    </p>
+                    <p>
+                        An entity with Strength 8 gets +32 to Heavy's weight, making that trait much more likely at spawn.
+                    </p>
+                </div>
+
+                <div class="how-box">
+                    <h3>Rate Modifier</h3>
+                    <p class="example-text">
+                        "The Impatient trait multiplies patience drain by 1.5x."
+                    </p>
+                    <p>
+                        When an impatient entity's patience ticks down, the rate is scaled by the connection. Combine with the Tick System for time-based state changes.
+                    </p>
+                </div>
+
+                <div class="how-box">
+                    <h3>Value Modifier</h3>
+                    <p class="example-text">
+                        "The Well-Fed modifier adds +10 to patience."
+                    </p>
+                    <p>
+                        Direct stat adjustments from active modifiers, traits, or context. Values stack and recalculate automatically when sources activate or expire.
+                    </p>
+                </div>
+
+                <div class="how-box">
+                    <h3>Eligibility Gate</h3>
+                    <p class="example-text">
+                        "Cannot select Optimist if Pessimist is already active."
+                    </p>
+                    <p>
+                        Block trait selection or action eligibility based on current state. Create mutually exclusive options and complex requirement chains.
+                    </p>
+                </div>
+            </div>
+            <p style="color: var(--ink-fade); font-size: 0.85rem; margin-top: 1rem;">
+                See connections in action:
+                <a href="../../demos/entity-spawner/index.html" style="color: var(--sage);">Entity Spawner &rarr;</a> &bull;
+                <a href="../../demos/formula-builder/index.html" style="color: var(--sage);">Formula Builder &rarr;</a> &bull;
+                <a href="../../demos/conditional-logic/index.html" style="color: var(--sage);">Conditional Logic &rarr;</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- Example Applications -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Example Applications</h2>
+            </div>
+
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
+                The same architecture handles different domains by changing the configuration, not the code. Here are a few examples of how the system could be applied:
+            </p>
+
+            <div class="use-cases-widget">
+                <div class="use-cases-tabs">
+                    <button class="use-case-tab active" data-tab="rpg">NPC Generation</button>
+                    <button class="use-case-tab" data-tab="cards">Card Games</button>
+                    <button class="use-case-tab" data-tab="city">Grand 4X</button>
+                    <button class="use-case-tab" data-tab="social">Dating Sim</button>
+                </div>
+
+                <div class="use-case-content active" data-content="rpg">
+                    <div class="use-case-example">
+                        <div class="use-case-diagram">
+                            <div class="mini-flow">
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Spawn</span>
+                                    <span class="mini-node attr">STR: 16</span>
+                                    <span class="mini-node attr">CON: 14</span>
+                                    <span class="mini-arrow">&harr;</span>
+                                    <span class="mini-node trait">Barbarian</span>
+                                    <span class="mini-node trait">Reckless</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">State</span>
+                                    <span class="mini-node var">HP: 12/45</span>
+                                    <span class="mini-node var">Rage: 80</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node mod">Bloodied</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Compound</span>
+                                    <span class="mini-node trait">Barbarian</span>
+                                    <span class="mini-node mod">Bloodied</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node comp">Berserker Rage</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="use-case-description">
+                            <ol class="use-case-steps">
+                                <li><strong>Spawn:</strong> An NPC with high STR/CON is weighted toward Barbarian archetype and Reckless trait</li>
+                                <li><strong>Combat:</strong> Reckless increases rage accumulation rate via connection</li>
+                                <li><strong>Threshold:</strong> HP drops below 25% &rarr; Bloodied modifier activates</li>
+                                <li><strong>Compound:</strong> Barbarian + Bloodied &rarr; Berserker Rage emerges automatically</li>
+                            </ol>
+                            <p class="use-case-note">Boss archetypes can be <strong>presets</strong>; random encounters use dynamic generation.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="use-case-content" data-content="cards">
+                    <div class="use-case-example">
+                        <div class="use-case-diagram">
+                            <div class="mini-flow">
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Preset</span>
+                                    <span class="mini-node attr">Mythic</span>
+                                    <span class="mini-node trait">Dragon</span>
+                                    <span class="mini-node trait">Flying</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Zone</span>
+                                    <span class="mini-node var">Pack</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node var">Collection</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node var">Hand</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Synergy</span>
+                                    <span class="mini-node mod">3+ Dragons</span>
+                                    <span class="mini-node var">5+ Mana</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node comp">Dragon Storm</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="use-case-description">
+                            <ol class="use-case-steps">
+                                <li><strong>Cards = Presets:</strong> Each card is a predefined trait bundle (Dragon + Flying + Mythic)</li>
+                                <li><strong>Pack Opening:</strong> Weighted selection based on rarity. The spawn engine picks which presets appear</li>
+                                <li><strong>Zone Movement:</strong> Cards "spawn" between zones (pack &rarr; collection &rarr; deck &rarr; hand)</li>
+                                <li><strong>Synergy Tracking:</strong> State engine counts Dragon cards in hand; 3+ triggers modifier</li>
+                                <li><strong>Combo:</strong> Dragons + Mana threshold &rarr; Dragon Storm compound unlocks</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="use-case-content" data-content="city">
+                    <div class="use-case-example">
+                        <div class="use-case-diagram">
+                            <div class="mini-flow">
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Province</span>
+                                    <span class="mini-node attr">Pop: Dense</span>
+                                    <span class="mini-node attr">Resources: Rich</span>
+                                    <span class="mini-arrow">&harr;</span>
+                                    <span class="mini-node trait">Industrial Hub</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">State</span>
+                                    <span class="mini-node var">Happiness: 42%</span>
+                                    <span class="mini-node var">Unrest: 68</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node mod">Discontent</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Crisis</span>
+                                    <span class="mini-node mod">Discontent</span>
+                                    <span class="mini-node var">Unrest &gt; 80</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node comp">Rebellion</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="use-case-description">
+                            <ol class="use-case-steps">
+                                <li><strong>Province Setup:</strong> Attributes like population density and resource richness influence trait selection</li>
+                                <li><strong>Turn Tick:</strong> Happiness depletes based on policy; Unrest accumulates per turn</li>
+                                <li><strong>Threshold:</strong> Low happiness triggers Discontent modifier</li>
+                                <li><strong>Cascade:</strong> Discontent accelerates Unrest accumulation rate</li>
+                                <li><strong>Compound:</strong> Discontent + Unrest &gt; 80 &rarr; Rebellion event triggers</li>
+                            </ol>
+                            <p class="use-case-note">Works for Civ-style empires, colony sims, or any region-based strategy.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="use-case-content" data-content="social">
+                    <div class="use-case-example">
+                        <div class="use-case-diagram">
+                            <div class="mini-flow">
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Character</span>
+                                    <span class="mini-node attr">Max Bond: 100</span>
+                                    <span class="mini-arrow">&harr;</span>
+                                    <span class="mini-node trait">Introvert</span>
+                                    <span class="mini-node trait">Bookworm</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Romance</span>
+                                    <span class="mini-node var">Bond: 72</span>
+                                    <span class="mini-node var">Trust: 85</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node mod">In Love</span>
+                                </div>
+                                <div class="mini-flow-row">
+                                    <span class="mini-label">Outcome</span>
+                                    <span class="mini-node trait">Bookworm</span>
+                                    <span class="mini-node mod">In Love</span>
+                                    <span class="mini-arrow">&rarr;</span>
+                                    <span class="mini-node comp">Kindred Spirit</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="use-case-description">
+                            <ol class="use-case-steps">
+                                <li><strong>Main Characters = Presets:</strong> Predefined personality + interests (Introvert, Bookworm)</li>
+                                <li><strong>Background NPCs:</strong> Dynamically generated with weighted trait selection</li>
+                                <li><strong>Romance State:</strong> Bond and Trust variables change through interactions</li>
+                                <li><strong>Threshold:</strong> Bond &gt; 70 triggers "In Love" modifier</li>
+                                <li><strong>Compound:</strong> Shared trait (Bookworm) + In Love &rarr; "Kindred Spirit" ending unlocks</li>
+                            </ol>
+                            <p class="use-case-note">Different trait combos unlock different outcomes: Rivals, Friends, Lovers, Kindred Spirit.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Demo -->
+    <section class="section demo-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>How I'm Using It</h2>
+            </div>
+
+            <div class="demo-intro">
+                <p>
+                    For <strong>Mabel's Tale</strong>, I'm using this engine to generate tavern patrons. Below is a simplified demo of the full system.
+                </p>
+
+                <div class="demo-explanation">
+                    <h4>How the Tavern Config Works</h4>
+                    <ul>
+                        <li><strong>Patience</strong> is a depreciating variable connected to a time system. It drains over time</li>
+                        <li>Personality traits like <strong>Demanding</strong> apply rate modifiers, causing satisfaction to drain faster</li>
+                        <li>When <strong>Wait Time</strong> crosses 30 seconds, the <strong>Impatient</strong> modifier activates automatically</li>
+                        <li>When <strong>Satisfaction</strong> drops below 50, the <strong>Frustrated</strong> modifier kicks in</li>
+                        <li>If <strong>Frustrated + Starving</strong> are both active, the <strong>Hangry</strong> compound emerges</li>
+                        <li>A <strong>VIP + Frustrated</strong> combination triggers the <strong>Angry VIP</strong> compound (a PR nightmare)</li>
+                    </ul>
+                    <p class="demo-cta">Spawn a few customers and advance time to watch connections cascade through the system.</p>
+                </div>
+            </div>
+
+            <div class="demo-frame-wrapper">
+                <div class="demo-frame-header">
+                    <span class="demo-frame-title">Tavern Patron Generator</span>
+                    <a href="../../demos/entity-spawner/index.html?embed=1" target="_blank" class="demo-frame-link">Open in new tab &rarr;</a>
+                </div>
+                <iframe src="../../demos/entity-spawner/index.html" class="demo-iframe" title="Spawn & States Engine Demo"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- Design Decisions -->
+    <section class="section" style="background: var(--panel);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Design Decisions</h2>
+            </div>
+
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
+                Building a system like this involves trade-offs. Here's why I made some of the key choices:
+            </p>
+
+            <div class="decisions-grid">
+                <div class="decision-card">
+                    <h4>Why JSON config over scripting?</h4>
+                    <p>
+                        Designers can tweak behavior without touching code. A connection change is a JSON edit, not a code deploy. Configs are also version-controllable and diffable, making it easy to track what changed when behavior shifts unexpectedly.
+                    </p>
+                </div>
+                <div class="decision-card">
+                    <h4>Why separate Spawn from State?</h4>
+                    <p>
+                        Generation ("what traits do you have?") is a different concern than simulation ("how do those traits affect you over time?"). Separating them makes each independently testable and allows spawn-only use cases like card pack generation.
+                    </p>
+                </div>
+                <div class="decision-card">
+                    <h4>Why support both thresholds AND manual control?</h4>
+                    <p>
+                        Declarative thresholds auto-activate when conditions are met AND auto-deactivate when they're not&mdash;no forgotten cleanup, no stale state bugs. But sometimes you need direct control: apply a modifier manually, toggle a trait on/off, or let thresholds handle it. The engine supports both approaches.
+                    </p>
+                </div>
+                <div class="decision-card">
+                    <h4>Trade-off: Flexibility for performance</h4>
+                    <p>
+                        The connection graph adds overhead vs hard-coded logic&mdash;for a tavern with 50 patrons ticking every frame, expect ~1-2ms on modern hardware. A conscious choice: rapid iteration and designer-friendly tooling matter more than microsecond optimization during development.
+                    </p>
+                </div>
+                <div class="decision-card">
+                    <h4>Why connections instead of direct references?</h4>
+                    <p>
+                        Indirection enables flexibility. A trait doesn't "know" it affects a variable&mdash;a connection defines that relationship. This means the same trait can have different effects in different configs, and relationships can be added or removed without modifying node definitions.
+                    </p>
+                </div>
+                <div class="decision-card">
+                    <h4>Why explicit compound definitions?</h4>
+                    <p>
+                        Emergent states could be detected automatically, but explicit definitions make them discoverable and intentional. Designers see exactly which combinations matter, and the engine only checks for compounds that are actually defined&mdash;no wasted cycles on impossible combos.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Integration</h2>
+            </div>
+
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
+                The engine is a single JavaScript class with no dependencies. Load a config, spawn entities, tick time, and react to events:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">engine-usage.js</div>
+                <pre><code><span class="c-comment">// Load config (JSON or object)</span>
+<span class="c-keyword">const</span> engine = <span class="c-keyword">new</span> <span class="c-method">SpawnEngine</span>(config);
+
+<span class="c-comment">// Dynamic spawn - random attributes + weighted trait selection</span>
+<span class="c-keyword">const</span> npc = engine.<span class="c-method">spawn</span>({ displayName: <span class="c-string">'Random NPC'</span> });
+
+<span class="c-comment">// Preset spawn - predefined entity configuration</span>
+<span class="c-keyword">const</span> boss = engine.<span class="c-method">spawn</span>({ preset: <span class="c-string">'dragon_boss'</span> });
+
+<span class="c-comment">// Advance time - variables tick, thresholds checked, compounds evaluated</span>
+engine.<span class="c-method">tick</span>(npc, <span class="c-keyword">5</span>);  <span class="c-comment">// 5 seconds (or turns, or whatever your tick represents)</span>
+
+<span class="c-comment">// Get current state snapshot</span>
+<span class="c-keyword">const</span> state = engine.<span class="c-method">getState</span>(npc.id);
+console.log(state.activeModifiers);  <span class="c-comment">// ['Waiting', 'Impatient']</span>
+console.log(state.activeCompounds);  <span class="c-comment">// ['Hangry']</span>
+
+<span class="c-comment">// React to events</span>
+engine.<span class="c-method">on</span>(<span class="c-string">'modifierApplied'</span>, ({ entityId, modifierId }) => {
+    <span class="c-comment">// Trigger game effects, UI updates, etc.</span>
+});
+
+engine.<span class="c-method">on</span>(<span class="c-string">'compoundActivated'</span>, ({ entityId, compoundId }) => {
+    <span class="c-comment">// Handle emergent state - special dialogue, events, etc.</span>
+});</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Go Deeper -->
+    <section class="section" style="background: var(--panel); text-align: center;">
+        <div class="container">
+            <div class="section-header">
+                <h2>Go Deeper</h2>
+            </div>
+
+            <p style="color: var(--parchment-dim); margin-bottom: 1.5rem;">
+                Explore the implementation, try the visual editor, or download the full system.
+            </p>
+
+            <div class="deeper-links">
+                <a href="reference/spawn-editor.html" class="deeper-link">
+                    Visual Editor
+                </a>
+                <a href="../../demos/formula-builder/index.html" class="deeper-link">
+                    Formula Builder Demo
+                </a>
+                <a href="../../demos/entity-spawner/index.html" class="deeper-link">
+                    Entity Spawner Demo
+                </a>
+                <a href="../../demos/conditional-logic/index.html" class="deeper-link">
+                    Conditional Logic Demo
+                </a>
+                <a href="docs/index.html" class="deeper-link">
+                    Technical Docs
+                </a>
+                <a href="reference/spawn-engine.js" class="deeper-link">
+                    Full Engine
+                </a>
+                <a href="tests/engine.test.html" class="deeper-link">
+                    Test Suite
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Back to Portfolio -->
+    <section class="back-section">
+        <a href="../../index.html#engine" class="back-link">
+            &larr; Back to Portfolio
+        </a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 Shane Ostrom</p>
+    </footer>
+
+    <script>
+        // Use case tabs
+        document.querySelectorAll('.use-case-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.dataset.tab;
+
+                // Update active tab
+                document.querySelectorAll('.use-case-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Update active content
+                document.querySelectorAll('.use-case-content').forEach(c => c.classList.remove('active'));
+                document.querySelector(`.use-case-content[data-content="${tabId}"]`).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
