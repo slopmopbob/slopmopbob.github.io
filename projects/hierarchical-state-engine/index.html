@@ -977,9 +977,9 @@
             </div>
             <div class="hero-concepts">
                 <div class="concept"><span class="concept-term">Spawn</span> Entities created from presets or generated dynamically</div>
-                <div class="concept"><span class="concept-term">Pools</span> Active entities stored with lifecycle management and logical despawn conditions</div>
+                <div class="concept"><span class="concept-term">Pools</span> Active entities with automatic creation, reuse, and cleanup</div>
                 <div class="concept"><span class="concept-term">Tick</span> Hooks into time systems (turns, seconds, custom)</div>
-                <div class="concept"><span class="concept-term">Connections</span> Declarative rules that automate state changes</div>
+                <div class="concept"><span class="concept-term">Connections</span> Config-based rules that automate state changes</div>
             </div>
         </div>
     </section>
@@ -1138,7 +1138,7 @@
             </div>
             <p style="color: var(--parchment-dim); margin-bottom: 1.5rem; max-width: 700px;">
                 The glue that ties everything together. Connections define how nodes influence each other
-                declaratively, in configuration, keeping game logic clean and maintainable.
+                in your config file, keeping game logic clean and maintainable.
             </p>
 
             <div class="how-it-works-grid">
@@ -1423,7 +1423,7 @@
                 <div class="decision-card">
                     <h4>Why JSON config over scripting?</h4>
                     <p>
-                        Designers can tweak behavior without touching code. A connection change is a JSON edit, not a code deploy. Configs are also version-controllable and diffable, making it easy to track what changed when behavior shifts unexpectedly.
+                        Designers can tweak behavior without touching code. A connection change is a JSON edit, not a code deploy. Configs are also version-controllable and easy to diff, making it simple to track what changed when behavior shifts unexpectedly.
                     </p>
                 </div>
                 <div class="decision-card">
@@ -1447,7 +1447,7 @@
                 <div class="decision-card">
                     <h4>Why connections instead of direct references?</h4>
                     <p>
-                        Indirection enables flexibility. A trait doesn't "know" it affects a variable&mdash;a connection defines that relationship. This means the same trait can have different effects in different configs, and relationships can be added or removed without modifying node definitions.
+                        Traits don't necessarily reference the variables they affect directly&mdash;a connection defines that relationship. This means the same trait can have different effects in different configs, and relationships can be added or removed without modifying node definitions.
                     </p>
                 </div>
                 <div class="decision-card">

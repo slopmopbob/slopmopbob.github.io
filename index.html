@@ -65,14 +65,14 @@
     <section id="engine" class="section engine">
         <div class="container">
             <h2 class="section-title">Spawn & States</h2>
-            <p class="section-subtitle">A configurable state engine for generating entities with layered traits, dynamic variables, and emergent compound states.</p>
+            <p class="section-subtitle">A configurable state engine for generating entities with layered traits, dynamic variables, and behaviors that emerge from how you wire them together.</p>
 
             <div class="engine-overview">
                 <div class="engine-description">
                     <p>
                         Define attributes, traits, variables, modifiers, and compounds in a single JSON config.
                         Connect them with typed relationships. The engine handles weighted trait selection, variable
-                        ticking, threshold triggers, and compound emergence automatically.
+                        ticking, threshold triggers, and compound activation automatically.
                     </p>
                     <p>
                         Entities spawn from presets or dynamic generation, live in managed pools, and evolve
@@ -110,12 +110,12 @@
                         <div class="cascade-arrow">&darr;</div>
                         <div class="cascade-step">
                             <span class="cascade-node mod">Modifiers</span>
-                            <span class="cascade-desc">Threshold-triggered state changes</span>
+                            <span class="cascade-desc">Activate when variables cross thresholds</span>
                         </div>
                         <div class="cascade-arrow">&darr;</div>
                         <div class="cascade-step">
                             <span class="cascade-node comp">Compounds</span>
-                            <span class="cascade-desc">Emergent from active combinations</span>
+                            <span class="cascade-desc">Appear when specific combinations align</span>
                         </div>
                         <div class="cascade-arrow">&darr;</div>
                         <div class="cascade-step">
@@ -125,7 +125,7 @@
                     </div>
                     <div class="cascade-footnote">
                         Relationships connect any node to any other: weight influences, rate modifiers,
-                        eligibility gates, and more.
+                        prerequisites, and more.
                     </div>
                 </div>
             </div>

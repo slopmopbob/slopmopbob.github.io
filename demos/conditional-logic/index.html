@@ -490,9 +490,9 @@
                     and you combine them with AND/OR connectors and nested groups.
                 </p>
                 <p style="margin-top: 0.6rem;">
-                    These conditions are the <strong style="color: var(--lavender);">trigger mechanism</strong>
-                    for the modifier layer. Every reactive behavior in Spawn &amp; States &mdash; every modifier
-                    that activates, every compound that emerges &mdash; starts with a condition like the ones you build here.
+                    In Spawn &amp; States, these conditions <strong style="color: var(--lavender);">drive the modifier layer</strong>.
+                    Every modifier that activates, every compound that emerges &mdash; starts with
+                    a condition like the ones you build here.
                 </p>
             </div>
             <div class="desc-col">
@@ -504,7 +504,7 @@
                     or satisfy requirements for compound states like <em style="color: var(--warning);">Berserk</em>.
                 </p>
                 <p style="margin-top: 0.6rem;">
-                    <strong style="color: var(--lavender);">Hysteresis</strong> prevents flickering: a modifier might apply at
+                    <strong style="color: var(--lavender);">Reactive thresholds</strong> prevent flickering: a modifier might apply at
                     Health &lt; 25 but only remove at Health &gt; 50, keeping the state stable through the gap. In the
                     <a href="../entity-spawner/index.html" style="color: var(--lavender); text-decoration: none; border-bottom: 1px solid var(--lavender-dim);">Entity Spawner</a>
                     demo, this is how modifiers like <em style="color: #d4a0b8;">Wounded</em>, <em style="color: #d4a0b8;">Enraged</em>, and <em style="color: #d4a0b8;">Exhausted</em> appear and persist.

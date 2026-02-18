@@ -598,12 +598,12 @@
             <div class="card-grid">
                 <div class="card">
                     <h4>Conditions on Items, Not State Transitions</h4>
-                    <p>Traditional FSMs define explicit transitions between states (A &rarr; B when X). This creates an N&times;N explosion as states grow. Spawn & States instead puts conditions on individual items &mdash; each modifier defines when it should apply and when it should be removed. Multiple modifiers can be active simultaneously without defining every possible combination.</p>
+                    <p>Traditional FSMs define explicit transitions between states (A &rarr; B when X). As states grow, the number of transitions grows quadratically&mdash;each new state potentially needs a transition to and from every existing state.<sup><a href="https://web.stanford.edu/class/cs123/lectures/CS123_lec08_HFSM_BT.pdf" target="_blank" style="color: var(--lavender); text-decoration: none;" title="Stanford CS123 — HFSMs & Behavior Trees">[1]</a></sup> Spawn & States avoids this by putting conditions on individual items &mdash; each modifier defines when it should apply and when it should be removed. Multiple modifiers can be active simultaneously without defining every possible combination.</p>
                 </div>
 
                 <div class="card">
                     <h4>Polling Tick + Event Notifications</h4>
-                    <p>The tick system is a polling loop: every tick, variables advance and thresholds are checked. This enables continuous change (hunger increasing at 2/sec) that pure events can't drive. Events are fire-and-forget notifications for external subscribers &mdash; the engine's internal state is always driven by the tick, not by event handlers.</p>
+                    <p>The tick system is a polling loop: every tick, variables advance and thresholds are checked. This enables continuous change (hunger increasing at 2/sec) that pure events can't drive. Events are one-way notifications for external subscribers &mdash; the engine's internal state is always driven by the tick, not by event handlers.</p>
                 </div>
 
                 <div class="card">
@@ -647,7 +647,7 @@
             </div>
 
             <div class="content">
-                <p>The engine's hot path runs on every tick for every active entity. Understanding and optimizing this path is critical for configs with many entities or complex modifier networks.</p>
+                <p>The engine's most performance-critical code runs on every tick for every active entity. Understanding and optimizing this path is critical for configs with many entities or complex modifier networks.</p>
 
                 <h3>Per-Tick Call Chain</h3>
                 <p>Each <code>tick()</code> call executes this sequence per entity:</p>
@@ -805,7 +805,7 @@ _batchingCascade = <span class="c-keyword">false</span>;
                 <p>The engine includes a multi-pool system for managing entity lifecycles. Pools pre-allocate entities and recycle them via acquire/release, avoiding repeated spawn/despawn overhead. Each pool can have independent size limits, pre-warming counts, and auto-replenishment settings.</p>
 
                 <h3>Comparison: FSMs vs Behavior Trees vs Cascade</h3>
-                <p>Traditional FSMs suffer from state explosion (N states &times; N transitions). Hierarchical FSMs (HFSMs) reduce this through nesting but remain brittle to change. Behavior trees gain modularity through composable, independent sub-trees.</p>
+                <p>Traditional FSMs suffer from state explosion&mdash;each new state potentially needs a transition to and from every existing state, and the number of transitions grows quadratically.<sup><a href="https://web.stanford.edu/class/cs123/lectures/CS123_lec08_HFSM_BT.pdf" target="_blank" style="color: var(--lavender); text-decoration: none;" title="Stanford CS123 — HFSMs & Behavior Trees">[1]</a></sup> Hierarchical FSMs (HFSMs) reduce this through nesting but remain brittle to change. Behavior trees gain modularity through composable, independent sub-trees.</p>
                 <p>The Spawn & States cascade model is closest to behavior trees in philosophy &mdash; each node evaluates independently based on current state, and multiple effects can be active simultaneously. The key difference is that cascade nodes don't execute actions; they define state. The cascade answers "what is this entity right now?" rather than "what should this entity do next?"</p>
             </div>
         </div>
